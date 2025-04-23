@@ -21,6 +21,7 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
+    'duty.apps.DutyConfig',
     'rank.apps.RankConfig',
     'authentication.apps.AuthenticationConfig',
     'unit.apps.UnitConfig',
