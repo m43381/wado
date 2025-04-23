@@ -21,6 +21,7 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
+    'rank.apps.RankConfig',
     'authentication.apps.AuthenticationConfig',
     'unit.apps.UnitConfig',
     'django.contrib.admin',
