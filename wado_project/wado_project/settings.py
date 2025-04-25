@@ -21,6 +21,7 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
+    'permission.apps.PermissionConfig',
     'missing.apps.MissingConfig',
     'people.apps.PeopleConfig',
     'duty.apps.DutyConfig',
