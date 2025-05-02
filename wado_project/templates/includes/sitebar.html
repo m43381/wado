@@ -1,0 +1,13 @@
+<aside class="sidebar">
+    <nav class="sidebar-nav">
+        <h3 class="sidebar-title">Меню</h3>
+        <ul>
+            {% block sidebar_menu %}
+            <li><a href="#" class="nav-item active">Профиль</a></li>
+            <li><a href="#" class="nav-item">Проекты</a></li>
+            <li><a href="#" class="nav-item">Настройки</a></li>
+            <li><a href="{% url 'logout' %}" class="nav-item logout">Выйти</a></li>
+            {% endblock %}
+        </ul>
+    </nav>
+</aside>

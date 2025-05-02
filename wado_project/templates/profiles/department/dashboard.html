@@ -2,10 +2,11 @@
 
 {% block account_content %}
 <div class="profile-container">
-    <h2>Мой профиль</h2>
+    <h2>Профиль кафедры</h2>
     <div class="profile-info">
-        <p>Имя пользователя: </p>
-        <p>Email: </p>
+        <p>Имя пользователя: {{ user.username }}</p>
+        <p>Кафедра: {{ user.department }} </p>
+        <p>Факультет: {{ user.faculty }} </p>
     </div>
 </div>
 {% endblock %}
