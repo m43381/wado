@@ -1,0 +1,16 @@
+/* Фиксированный подвал */
+.footer {
+    background-color: #252526;
+    padding: 15px 20px;
+    color: #aaa;
+    text-align: center;
+    border-top: 1px solid #3e3e42;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: auto;
+    min-height: 60px;
+    z-index: 1000;
+    box-sizing: border-box;
+}
