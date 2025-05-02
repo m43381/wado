@@ -2,21 +2,22 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{% block title %}Мой сайт{% endblock %}</title>
-    {% load django_bootstrap5 %}
-    {% bootstrap_css %}
-    {% bootstrap_javascript %}
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Распределятор{% endblock %}</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
 </head>
-<body class="d-flex flex-column min-vh-100">
-    {% include "includes/header.html" %}
-    
-    <main class="flex-grow-1 container my-4">
-        {% block content %}
-            <div class="alert alert-info">Контента пока нет :(</div>
-        {% endblock %}
-    </main>
-    
-    {% include "includes/footer.html" %}
+<body class="{% if request.path == '/' %}home-page{% endif %}">
+    <div class="layout">
+        {% include "includes/header.html" %}
+        
+        <main class="main">
+            {% block content %}
+            <!-- Контент будет здесь -->
+            {% endblock %}
+        </main>
+        
+        {% include "includes/footer.html" %}
+    </div>
 </body>
 </html>

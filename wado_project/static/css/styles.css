@@ -1,0 +1,365 @@
+/* Reset и базовые стили */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #1e1e1e;
+    color: #f0f0f0;
+    line-height: 1.6;
+    padding-top: 70px; /* Отступ для header */
+    padding-bottom: 0; /* Убрали фиксированный отступ для footer */
+    margin-bottom: 60px; /* Добавили margin вместо padding */
+    min-height: 100vh;
+    position: relative;
+    box-sizing: border-box;
+}
+
+.layout {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+/* Фиксированная шапка */
+.header {
+    background-color: #252526;
+    padding: 0 20px;
+    color: white;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 70px;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+}
+
+/* Контейнер для содержимого шапки */
+.header-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    height: 100%;
+    padding: 0 20px; /* Добавляем отступы по бокам */
+}
+
+/* Стили для логотипа */
+.logo {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #f0f0f0;
+    text-decoration: none;
+    margin-right: auto; /* Прижимаем к левому краю */
+}
+
+/* Контейнер для кнопок */
+.header-actions {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    height: 100%;
+    margin-left: auto; /* Прижимаем к правому краю */
+}
+
+
+/* Базовые стили кнопок */
+.header-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 16px;
+    border-radius: 4px;
+    font-weight: 500;
+    font-size: 14px;
+    line-height: 1;
+    text-decoration: none;
+    transition: all 0.2s ease-out;
+    white-space: nowrap;
+    height: 36px;
+}
+
+
+/* Основной контент */
+.main {
+    flex: 1;
+    padding: 20px;
+    margin-top: 10px;
+    padding-bottom: 80px; /* Дополнительный отступ снизу */
+}
+
+/* Личный кабинет */
+.account-layout {
+    display: flex;
+    min-height: calc(100vh - 130px); /* Учитываем высоту header и footer */
+}
+
+.sidebar {
+    width: 250px;
+    background-color: #252526;
+    position: fixed;
+    top: 70px; /* Под header */
+    bottom: 60px; /* Над footer */
+    left: 0;
+    padding: 15px 0;
+    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+    overflow-y: auto;
+    z-index: 900;
+}
+
+.sidebar-nav {
+    width: 100%;
+}
+
+.sidebar-title {
+    color: #f0f0f0;
+    padding: 0 20px 15px;
+    border-bottom: 1px solid #3e3e42;
+    margin-bottom: 10px;
+    font-size: 1.1rem;
+}
+
+.nav-item {
+    display: block;
+    padding: 12px 20px;
+    color: #f0f0f0;
+    text-decoration: none;
+    transition: all 0.3s;
+    border-left: 3px solid transparent;
+}
+
+.nav-item:hover {
+    background-color: #2d2d30;
+}
+
+.nav-item.active {
+    background-color: #2d2d30;
+    border-left: 3px solid #4ec9b0;
+}
+
+.nav-item.logout {
+    color: #f48771;
+}
+
+.nav-item.logout:hover {
+    background-color: #382929;
+}
+
+.account-content {
+    margin-left: 250px;
+    padding: 30px;
+    width: calc(100% - 250px);
+    background-color: #2d2d2d;
+    min-height: calc(100vh - 130px); /* Учитываем высоту header и footer */
+}
+
+/* Стили для страницы входа */
+.auth-container {
+    position: fixed;
+    top: 70px; /* Отступ под header */
+    bottom: 60px; /* Отступ над footer */
+    left: 0;
+    right: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: #1e1e1e; /* Фон как у body */
+    overflow: hidden; /* Запрещаем прокрутку */
+    padding: 20px;
+}
+
+.auth-card {
+    background-color: #252526;
+    padding: 30px;
+    border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+    width: 100%;
+    max-width: 400px;
+    max-height: 100%; /* Ограничиваем высоту карточки */
+    overflow-y: auto; /* Прокрутка только внутри карточки */
+}
+
+/* Отключаем прокрутку body на странице входа */
+.login-page body {
+    overflow: hidden;
+    height: 100vh;
+}
+
+.auth-card h2 {
+    color: #f0f0f0;
+    margin-bottom: 20px;
+    text-align: center;
+    font-size: 1.8rem;
+}
+
+.auth-form {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.auth-form p {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.auth-form label {
+    color: #d4d4d4;
+    font-size: 0.9rem;
+}
+
+.auth-form input {
+    padding: 12px 15px;
+    background-color: #333;
+    border: 1px solid #3e3e42;
+    border-radius: 4px;
+    color: #f0f0f0;
+    font-size: 1rem;
+    transition: border-color 0.3s;
+}
+
+.auth-form input:focus {
+    outline: none;
+    border-color: #4ec9b0;
+}
+
+.auth-submit {
+    padding: 12px;
+    background-color: #4ec9b0;
+    color: #1e1e1e;
+    border: none;
+    border-radius: 4px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    margin-top: 10px;
+}
+
+.auth-submit:hover {
+    background-color: #3aa794;
+}
+
+/* Фиксированный подвал */
+.footer {
+    background-color: #252526;
+    padding: 15px 20px;
+    color: #aaa;
+    text-align: center;
+    border-top: 1px solid #3e3e42;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: auto; /* Изменено с фиксированной высоты */
+    min-height: 60px; /* Минимальная высота */
+    z-index: 1000;
+    box-sizing: border-box; /* Учитываем padding в высоте */
+}
+
+
+/* Стили для навигации в шапке */
+.header-nav {
+    display: flex;
+    flex-direction: row-reverse;
+    justify-content: flex-start;
+    align-items: center;
+    height: 100%;
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
+}
+
+/* Контейнер для кнопок */
+.header-actions {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+/* Базовые стили кнопок */
+.header-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 16px;
+    border-radius: 4px;
+    font-weight: 500;
+    font-size: 14px;
+    line-height: 1;
+    text-decoration: none;
+    transition: all 0.2s ease-out;
+    white-space: nowrap;
+}
+
+/* Стиль кнопки входа */
+.header-btn--primary {
+    background-color: #4ec9b0;
+    color: #1e1e1e;
+}
+
+.header-btn--primary:hover {
+    background-color: #3aa794;
+    transform: translateY(-1px);
+}
+
+/* Стиль кнопки кабинета */
+.header-btn--secondary {
+    background-color: rgba(255, 255, 255, 0.08);
+    color: #f0f0f0;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.header-btn--secondary:hover {
+    background-color: rgba(255, 255, 255, 0.12);
+    border-color: rgba(255, 255, 255, 0.16);
+}
+
+/* Показываем кнопки только на главной */
+.home-page .header-actions {
+    display: flex;
+}
+
+/* По умолчанию скрываем */
+.header-actions {
+    display: none;
+}
+
+/* Адаптация для мобильных */
+@media (max-width: 768px) {
+    .header-nav {
+        padding: 0 15px;
+    }
+    
+    .header-actions {
+        gap: 8px;
+    }
+    
+    .header-btn {
+        padding: 6px 12px;
+        font-size: 13px;
+    }
+}
+
+/* Для очень маленьких экранов */
+@media (max-width: 480px) {
+    .header-actions {
+        flex-direction: column;
+        gap: 6px;
+        align-items: flex-end;
+    }
+    
+    .header-btn {
+        width: 100%;
+        justify-content: flex-end;
+        padding: 5px 10px;
+    }
+}
