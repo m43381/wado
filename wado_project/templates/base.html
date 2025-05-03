@@ -12,6 +12,8 @@
     <link rel="stylesheet" href="{% static 'css/auth.css' %}">
     <link rel="stylesheet" href="{% static 'css/account.css' %}">
     <link rel="stylesheet" href="{% static 'css/utilities.css' %}">
+    {% block extra_head %}
+    {% endblock %}
 </head>
 <body class="{% if request.path == '/' %}home-page{% endif %}">
     <div class="layout">

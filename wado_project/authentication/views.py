@@ -15,11 +15,11 @@ class CustomLoginView(LoginView):
         if user.is_superuser:
             return reverse_lazy('admin:index')
         elif user.groups.filter(name='Комендант').exists():
-            return reverse_lazy('commandant:dashboard')
+            return reverse_lazy('commandant:profile')
         elif user.groups.filter(name='Факультет').exists():
-            return reverse_lazy('faculty:dashboard')
+            return reverse_lazy('faculty:profile')
         elif user.groups.filter(name='Кафедра').exists():
-            return reverse_lazy('department:dashboard')
+            return reverse_lazy('department:profile')
         else:
             messages.warning(self.request, 'Ваш аккаунт не имеет назначенных прав доступа')
             return reverse_lazy('login')
@@ -32,11 +32,11 @@ def profile_redirect(request):
     if request.user.is_superuser:
         return redirect('admin:index')
     elif request.user.groups.filter(name='Комендант').exists():
-        return redirect('commandant:dashboard')
+        return redirect('commandant:profile')
     elif request.user.groups.filter(name='Факультет').exists():
-        return redirect('faculty:dashboard')
+        return redirect('faculty:profile')
     elif request.user.groups.filter(name='Кафедра').exists():
-        return redirect('department:dashboard')
+        return redirect('department:profile')
     else:
         messages.warning(request, 'Ваш аккаунт не имеет назначенных прав доступа')
         return redirect('login')

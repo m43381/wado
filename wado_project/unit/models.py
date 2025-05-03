@@ -30,5 +30,5 @@ class Department(models.Model):
     
     def __str__(self):
         if self.faculty:
-            return f"{self.name} ({self.faculty})"
+            return f"{self.name}"
         return self.name

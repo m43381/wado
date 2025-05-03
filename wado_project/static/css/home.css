@@ -1,0 +1,35 @@
+.homepage-container {
+    max-width: 800px;
+    margin: 50px auto; /* Уменьшили верхний/нижний отступ */
+    text-align: center;
+    padding: 0 20px;
+
+}
+
+.homepage-title {
+    font-size: 2.5rem;
+    color: #e8f3f1;
+    margin: 20px 0;
+    font-weight: 600;
+}
+
+.homepage-container p {
+    font-size: 1.2rem !important;
+    color: #7f8c8d !important;
+}
+
+@media (max-width: 768px) {
+    .homepage-container {
+        margin: 30px auto; /* Уменьшили отступы для мобильных */
+        min-height: calc(100vh - 150px); /* Корректировка для мобильных */
+    }
+    
+    h1 {
+        font-size: 2rem;
+    }
+    
+    p {
+        font-size: 1rem;
+        margin-bottom: 20px;
+    }
+}

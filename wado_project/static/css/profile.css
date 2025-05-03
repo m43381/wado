@@ -1,0 +1,178 @@
+/* Основные стили профиля */
+.profile-container {
+    padding: 2rem;
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+.profile-header {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.profile-avatar {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background-color: #4ec9b0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #1e1e1e;
+    font-size: 2.5rem;
+}
+
+.profile-title h1 {
+    color: #f0f0f0;
+    margin: 0;
+    font-size: 1.8rem;
+}
+
+.department-name {
+    color: #d4d4d4;
+    margin: 0.25rem 0 0;
+    font-size: 1.2rem;
+}
+
+/* Карточка профиля */
+.profile-card {
+    background-color: #252526;
+    border-radius: 8px;
+    padding: 2rem;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+}
+
+.profile-section {
+    margin-bottom: 2rem;
+}
+
+.profile-section h3 {
+    color: #f0f0f0;
+    margin-bottom: 1.5rem;
+    font-size: 1.3rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+/* Сетка информации */
+.info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 1.5rem;
+}
+
+.info-item {
+    background-color: #2d2d2d;
+    padding: 1rem;
+    border-radius: 6px;
+    border-left: 3px solid #4ec9b0;
+}
+
+.info-label {
+    display: block;
+    color: #858585;
+    font-size: 0.85rem;
+    margin-bottom: 0.25rem;
+}
+
+.info-value {
+    color: #f0f0f0;
+    font-size: 1.05rem;
+    font-weight: 500;
+}
+
+/* Статистика */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.5rem;
+}
+
+.stat-card {
+    background-color: #2d2d2d;
+    border-radius: 6px;
+    padding: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    transition: transform 0.3s;
+}
+
+.stat-card:hover {
+    transform: translateY(-3px);
+}
+
+.stat-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background-color: rgba(78, 201, 176, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #4ec9b0;
+    font-size: 1.5rem;
+}
+
+.stat-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.stat-value {
+    color: #f0f0f0;
+    font-size: 1.5rem;
+    font-weight: 600;
+    line-height: 1;
+}
+
+.stat-label {
+    color: #858585;
+    font-size: 0.9rem;
+    margin-top: 0.25rem;
+}
+
+/* Кнопки действий */
+.profile-actions {
+    margin-top: 2rem;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.btn-edit {
+    background-color: #4ec9b0;
+    color: #1e1e1e;
+    padding: 0.75rem 1.5rem;
+    border-radius: 4px;
+    text-decoration: none;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: all 0.2s;
+}
+
+.btn-edit:hover {
+    background-color: #3aa794;
+    color: #1e1e1e;
+    transform: translateY(-1px);
+}
+
+/* Адаптация */
+@media (max-width: 768px) {
+    .profile-header {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .info-grid, .stats-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .profile-actions {
+        justify-content: center;
+    }
+}

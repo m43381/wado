@@ -1,70 +1,95 @@
-/* Стили для страницы входа */
+/* static/css/auth.css */
+
+/* Основные стили для страницы входа */
+.login-page {
+    background-color: #1e1e1e;
+    height: 100vh;
+    overflow: hidden;
+}
+
+.login-page .layout {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+/* Контейнер аутентификации */
 .auth-container {
     position: fixed;
-    top: 70px;
-    bottom: 60px;
+    top: 70px; /* Отступ под header */
+    bottom: 60px; /* Отступ над footer */
     left: 0;
     right: 0;
     display: flex;
     justify-content: center;
     align-items: center;
     background-color: #1e1e1e;
-    overflow: hidden;
     padding: 20px;
+    overflow-y: auto;
 }
 
+/* Карточка входа */
 .auth-card {
     background-color: #252526;
-    padding: 30px;
+    padding: 2.5rem;
     border-radius: 8px;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
     width: 100%;
     max-width: 400px;
-    max-height: 100%;
-    overflow-y: auto;
+    margin: 0 auto;
 }
 
+/* Заголовок формы */
 .auth-card h2 {
     color: #f0f0f0;
-    margin-bottom: 20px;
+    margin-bottom: 1.5rem;
     text-align: center;
     font-size: 1.8rem;
+    font-weight: 600;
 }
 
+/* Форма входа */
 .auth-form {
     display: flex;
     flex-direction: column;
-    gap: 15px;
+    gap: 1.25rem;
 }
 
-.auth-form p {
+/* Группы полей формы */
+.auth-form .form-group {
     display: flex;
     flex-direction: column;
-    gap: 5px;
+    gap: 0.5rem;
 }
 
+/* Стили для label */
 .auth-form label {
     color: #d4d4d4;
-    font-size: 0.9rem;
+    font-size: 0.95rem;
+    font-weight: 500;
 }
 
+/* Стили для полей ввода */
 .auth-form input {
-    padding: 12px 15px;
+    padding: 0.75rem 1rem;
     background-color: #333;
     border: 1px solid #3e3e42;
     border-radius: 4px;
     color: #f0f0f0;
     font-size: 1rem;
-    transition: border-color 0.3s;
+    transition: all 0.3s ease;
+    width: 100%;
 }
 
 .auth-form input:focus {
     outline: none;
     border-color: #4ec9b0;
+    box-shadow: 0 0 0 2px rgba(78, 201, 176, 0.2);
 }
 
+/* Кнопка входа */
 .auth-submit {
-    padding: 12px;
+    padding: 0.75rem;
     background-color: #4ec9b0;
     color: #1e1e1e;
     border: none;
@@ -73,9 +98,59 @@
     font-weight: 600;
     cursor: pointer;
     transition: background-color 0.3s;
-    margin-top: 10px;
+    margin-top: 0.5rem;
+    width: 100%;
 }
 
 .auth-submit:hover {
     background-color: #3aa794;
+}
+
+/* Сообщения об ошибках */
+.errorlist {
+    color: #f48771;
+    font-size: 0.85rem;
+    margin-top: 0.25rem;
+    list-style: none;
+}
+
+/* Дополнительные ссылки (если будут) */
+.auth-links {
+    margin-top: 1.5rem;
+    text-align: center;
+}
+
+.auth-links a {
+    color: #4ec9b0;
+    text-decoration: none;
+    font-size: 0.9rem;
+}
+
+.auth-links a:hover {
+    text-decoration: underline;
+}
+
+/* Адаптация для мобильных */
+@media (max-width: 768px) {
+    .auth-card {
+        padding: 1.5rem;
+    }
+    
+    .auth-card h2 {
+        font-size: 1.5rem;
+    }
+    
+    .auth-form {
+        gap: 1rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .auth-container {
+        padding: 10px;
+    }
+    
+    .auth-card {
+        padding: 1.25rem;
+    }
 }

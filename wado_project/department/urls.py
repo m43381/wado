@@ -1,9 +1,9 @@
-from django.urls import path
+from django.urls import path, include
 from . import views
 
 app_name = 'department'
 
 urlpatterns = [
-    path('', views.DepartmentDashboardView.as_view(), name='dashboard'),
-    # Другие URL для кафедры
+    path('profile/', views.DepartmentDashboardView.as_view(), name='profile'),
+    path('people/', include('people.urls', namespace='people'), name='people')
 ]
