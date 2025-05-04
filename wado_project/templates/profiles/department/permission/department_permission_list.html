@@ -1,0 +1,57 @@
+{% extends "base_account.html" %}
+{% load static %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'css/department.css' %}">
+
+{% endblock %}
+{% block sitebar_menu %}
+<li><a href="{% url 'department:profile' %}" class="nav-item">Профиль кафедры</a></li>
+<li><a href="{% url 'department:people:staff' %}" class="nav-item">Личный состав</a></li>
+<li><a href="{% url 'department:missing:department_list' %}" class="nav-item">Освобождения</a></li>
+<li><a href="{% url 'department:permission:department_list' %}" class="nav-item active">Допуски</a></li>
+{% endblock %}
+
+{% block account_content %}
+<div class="department-staff-container">
+    <div class="header-with-button">
+        <h1>Допуски к нарядам</h1>
+    </div>
+    
+    {% if staff_list %}
+    <div class="table-responsive">
+        <table class="staff-table">
+            <thead>
+                <tr>
+                    <th>ФИО</th>
+                    <th>Звание</th>
+                    <th>Допущенные наряды</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for person in staff_list %}
+                <tr onclick="window.location='{% url 'department:permission:department_edit' person.id %}';" 
+                    style="cursor: pointer;">
+                    <td>{{ person.full_name }}</td>
+                    <td>{{ person.rank }}</td>
+                    <td>
+                        {% for perm in person.department_duty_permissions.all %}
+                        <span class="permission-badge" title="Вес: {{ perm.duty.duty_weight }}">
+                            {{ perm.duty.duty_name }}
+                        </span>
+                        {% empty %}
+                        <span class="no-permissions">Нет допусков</span>
+                        {% endfor %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-message">
+        <p>Нет сотрудников для отображения</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

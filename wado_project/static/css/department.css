@@ -1,6 +1,5 @@
 /* department.css - Темная тема */
 
-/* Основные стили страницы */
 .department-staff-container {
     padding: 2rem;
     background-color: #2d2d2d;
@@ -146,6 +145,16 @@
     color: #858585;
     margin-bottom: 1.5rem;
     font-size: 1.1rem;
+}
+
+.permission-badge {
+    display: inline-block;
+    background: #4ec9b0;
+    color: #1e1e1e;
+    padding: 3px 8px;
+    border-radius: 4px;
+    margin: 2px;
+    font-size: 0.85rem;
 }
 
 /* Адаптация для мобильных */

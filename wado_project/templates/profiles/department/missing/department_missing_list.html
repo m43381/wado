@@ -1,0 +1,76 @@
+{% extends "base_account.html" %}
+{% load static %}
+
+{% block title %}Освобождения от кафедры | Распределятор{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'css/department.css' %}">
+{% endblock %}
+
+{% block sitebar_menu %}
+<li><a href="{% url 'department:profile' %}" class="nav-item">Профиль кафедры</a></li>
+<li><a href="{% url 'department:people:staff' %}" class="nav-item">Личный состав</a></li>
+<li><a href="{% url 'department:missing:department_list' %}" class="nav-item active">Освобождения</a></li>
+<li><a href="{% url 'department:permission:department_list' %}" class="nav-item">Допуски</a></li>
+{% endblock %}
+
+{% block account_content %}
+<div class="department-staff-container">
+    <div class="header-with-button">
+        <h1>Освобождения от кафедры {{ department.name }}</h1>
+        <a href="{% url 'department:missing:department_add' %}" class="add-button">
+            <i class="fas fa-plus"></i> Добавить освобождение
+        </a>
+    </div>
+    
+    {% if missing_list %}
+    <div class="table-responsive">
+        <table class="staff-table">
+            <thead>
+                <tr>
+                    <th>Сотрудник</th>
+                    <th>Период</th>
+                    <th>Причина</th>
+                    <th>Комментарий</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for missing in missing_list %}
+                <tr onclick="window.location='{% url 'department:missing:department_edit' missing.pk %}';" 
+                    style="cursor: pointer;">
+                    <td>{{ missing.person.full_name }}</td>
+                    <td>{{ missing.start_date|date:"d.m.Y" }} - {{ missing.end_date|date:"d.m.Y" }}</td>
+                    <td>{{ missing.get_reason_display }}</td>
+                    <td>{{ missing.comment|default:"-"|truncatechars:30 }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-message">
+        <p>Нет данных об освобождениях</p>
+        <a href="{% url 'department:missing:department_add' %}" class="add-button">
+            <i class="fas fa-plus"></i> Добавить первое освобождение
+        </a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Добавляем hover-эффект для строк
+    const rows = document.querySelectorAll('.staff-table tbody tr');
+    rows.forEach(row => {
+        row.addEventListener('mouseenter', function() {
+            this.style.backgroundColor = '#333';
+        });
+        row.addEventListener('mouseleave', function() {
+            this.style.backgroundColor = '';
+        });
+    });
+});
+</script>
+{% endblock %}

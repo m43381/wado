@@ -7,7 +7,7 @@ from .forms import PeopleForm
 @login_required
 def department_staff(request):
     staff = People.objects.filter(department=request.user.department).order_by('full_name')
-    return render(request, 'profiles/department/department_staff.html', {
+    return render(request, 'profiles/department/staff/department_staff.html', {
         'staff': staff,
         'department': request.user.department
     })
@@ -26,7 +26,7 @@ def add_staff(request):
     else:
         form = PeopleForm()
     
-    return render(request, 'profiles/department/add_staff.html', {
+    return render(request, 'profiles/department/staff/add_staff.html', {
         'form': form,
         'department': request.user.department
     })
@@ -44,7 +44,7 @@ def edit_staff(request, pk):
     else:
         form = PeopleForm(instance=staff_member)
     
-    return render(request, 'profiles/department/edit_staff.html', {
+    return render(request, 'profiles/department/staff/edit_staff.html', {
         'form': form,
         'staff_member': staff_member
     })

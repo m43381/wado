@@ -10,6 +10,8 @@
 {% block sitebar_menu %}
 <li><a href="{% url 'department:profile' %}" class="nav-item">Профиль кафедры</a></li>
 <li><a href="{% url 'department:people:staff' %}" class="nav-item active">Личный состав</a></li>
+<li><a href="{% url 'department:missing:department_list' %}" class="nav-item">Освобождения</a></li>
+<li><a href="{% url 'department:permission:department_list' %}" class="nav-item">Допуски</a></li>
 {% endblock %}
 
 {% block account_content %}
