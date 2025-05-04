@@ -7,5 +7,6 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('authentication/', include('authentication.urls')),
     path('department/', include('department.urls')),
+    path('commandant/', include('commandant.urls')),
     path('', views.homepage, name='home'),
 ]

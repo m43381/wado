@@ -29,9 +29,19 @@ class CustomLogoutView(LogoutView):
 
 @login_required
 def profile_redirect(request):
+    print(f"User: {request.user}")
+    print(f"Groups: {list(request.user.groups.all())}")
+    print(f"Has commandant attr: {hasattr(request.user, 'commandant')}")
+    
     if request.user.is_superuser:
         return redirect('admin:index')
     elif request.user.groups.filter(name='Комендант').exists():
+        print("Redirecting to commandant profile")
+        return redirect('commandant:profile')
+    if request.user.is_superuser:
+        return redirect('admin:index')
+    elif request.user.groups.filter(name='Комендант').exists():
+        print('okkkkkk')
         return redirect('commandant:profile')
     elif request.user.groups.filter(name='Факультет').exists():
         return redirect('faculty:profile')

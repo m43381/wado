@@ -21,6 +21,7 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
+    'commandant.apps.CommandantConfig',
     'department.apps.DepartmentConfig',
     'record.apps.RecordConfig',
     'permission.apps.PermissionConfig',
