@@ -1,5 +1,6 @@
 from django import forms
 from .models import DepartmentMissing
+from django.forms.widgets import DateInput  # Импортируем виджет DateInput
 
 class DepartmentMissingForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
@@ -10,13 +11,12 @@ class DepartmentMissingForm(forms.ModelForm):
                 'class': 'form-control',
                 'style': 'width: 100%'
             })
-        # Специальные настройки для полей даты
-        self.fields['start_date'].widget.attrs.update({'type': 'date'})
-        self.fields['end_date'].widget.attrs.update({'type': 'date'})
     
     class Meta:
         model = DepartmentMissing
         fields = ['person', 'start_date', 'end_date', 'reason', 'comment']
         widgets = {
+            'start_date': DateInput(attrs={'type': 'date'}),  # Используем DateInput с type='date'
+            'end_date': DateInput(attrs={'type': 'date'}),   # для полей даты
             'comment': forms.Textarea(attrs={'rows': 3}),
         }

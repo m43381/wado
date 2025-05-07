@@ -1,0 +1,60 @@
+{# add_duty.html #}
+{% extends "base_account.html" %}
+{% load static %}
+
+{% block title %}Добавление наряда{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'css/forms.css' %}">
+{% endblock %}
+
+{% block sitebar_menu %}
+<li><a href="{% url 'commandant:profile' %}" class="nav-item">Профиль коменданта</a></li>
+<li><a href="{% url 'commandant:duty:list' %}" class="nav-item active">Наряды</a></li>
+{% endblock %}
+
+{% block account_content %}
+<div class="form-page">
+    <div class="form-card">
+        <h2 class="form-title">
+            <i class="fas fa-plus-circle"></i> Добавление нового наряда
+        </h2>
+        
+        
+        <form method="post" class="duty-form">
+            {% csrf_token %}
+            
+            <div class="form-group">
+                <label for="{{ form.duty_name.id_for_label }}">
+                    <i class="fas fa-heading"></i> {{ form.duty_name.label }}
+                </label>
+                {{ form.duty_name }}
+                {% if form.duty_name.errors %}
+                <div class="error-message">{{ form.duty_name.errors }}</div>
+                {% endif %}
+                <small class="form-text text-muted">Уникальное название наряда</small>
+            </div>
+            
+            <div class="form-group">
+                <label for="{{ form.duty_weight.id_for_label }}">
+                    <i class="fas fa-weight-hanging"></i> {{ form.duty_weight.label }}
+                </label>
+                {{ form.duty_weight }}
+                {% if form.duty_weight.errors %}
+                <div class="error-message">{{ form.duty_weight.errors }}</div>
+                {% endif %}
+                <small class="form-text text-muted">Числовое значение веса наряда</small>
+            </div>
+            
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i> Сохранить
+                </button>
+                <a href="{% url 'commandant:duty:list' %}" class="btn btn-secondary">
+                    <i class="fas fa-times"></i> Отмена
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

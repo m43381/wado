@@ -1,0 +1,71 @@
+{% extends "base_account.html" %}
+{% load static %}
+
+{% block title %}Наряды | Распределятор{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'css/department.css' %}">
+{% endblock %}
+
+{% block sitebar_menu %}
+<li><a href="{% url 'commandant:profile' %}" class="nav-item">Профиль коменданта</a></li>
+<li><a href="{% url 'commandant:duty:list' %}" class="nav-item active">Наряды</a></li>
+{% endblock %}
+
+{% block account_content %}
+<div class="department-staff-container">
+    <div class="header-with-button">
+        <h1>Список нарядов</h1>
+        <a href="{% url 'commandant:duty:add' %}" class="add-button">
+            <i class="fas fa-plus"></i> Добавить наряд
+        </a>
+    </div>
+    
+    {% if dutys %}
+    <div class="table-responsive">
+        <table class="staff-table">
+            <thead>
+                <tr>
+                    <th>Название</th>
+                    <th>Вес</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for duty in dutys %}
+                <tr onclick="window.location='{% url 'commandant:duty:edit' duty.pk %}';" 
+                    style="cursor: pointer;">
+                    <td>{{ duty.duty_name }}</td>
+                    <td>{{ duty.duty_weight }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-message">
+        <p>Нет данных о нарядах</p>
+        <a href="{% url 'commandant:duty:add' %}" class="add-button">
+            <i class="fas fa-plus"></i> Добавить первый наряд
+        </a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Скрипт для обработки кликов -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Добавляем hover-эффект для строк
+    const rows = document.querySelectorAll('.staff-table tbody tr');
+    rows.forEach(row => {
+        row.addEventListener('mouseenter', function() {
+            this.style.backgroundColor = '#333';
+        });
+        row.addEventListener('mouseleave', function() {
+            this.style.backgroundColor = '';
+        });
+    });
+});
+</script>
+{% endblock %}
