@@ -8,5 +8,6 @@ urlpatterns = [
     path('authentication/', include('authentication.urls')),
     path('department/', include('department.urls')),
     path('commandant/', include('commandant.urls')),
+    path('faculty/', include('faculty.urls')),
     path('', views.homepage, name='home'),
 ]
