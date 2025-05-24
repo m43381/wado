@@ -9,6 +9,28 @@ from django.urls import reverse_lazy
 from django.utils.translation import gettext_lazy as _
 
 
+
+class IsCommandantMixin:
+    """
+    Миксин, который проверяет:
+    - Пользователь авторизован
+    - Пользователь состоит в группе 'Комендант'
+    """
+
+    login_url = 'login'
+    permission_denied_message = _("У вас недостаточно прав для доступа к этой странице")
+
+    def dispatch(self, request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            messages.warning(request, _("Для доступа необходимо авторизоваться"))
+            return redirect(self.login_url)
+
+        if not request.user.groups.filter(name='Комендант').exists():
+            messages.warning(request, self.permission_denied_message)
+            return redirect('home')
+
+        return super().dispatch(request, *args, **kwargs)
+
 class HasDepartmentMixin(DjangoLoginRequiredMixin):
     login_url = 'login'
     permission_denied_message = _("У вас недостаточно прав для доступа к этому разделу")

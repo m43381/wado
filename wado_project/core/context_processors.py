@@ -14,6 +14,7 @@ def sidebar_menu(request):
         menu_items = [
             {'name': 'Профиль коменданта', 'url_name': 'commandant:profile', 'active': False},
             {'name': 'Наряды', 'url_name': 'commandant:duty:list', 'active': False},
+            {'name': 'Личный состав', 'url_name': 'commandant:staff', 'active': False},
         ]
     elif user_type == 'faculty':
         menu_items = [

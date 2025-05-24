@@ -50,17 +50,15 @@ from people.models import People
 from unit.models import Department
 from duty.models import Duty
 from missing.models import DepartmentMissing
-from permission.models import DepartmentDutyPermission  # ← уже есть у тебя
-
-# Миксины и вспомогательные библиотеки
+from permission.models import DepartmentDutyPermission
 from core.mixins import HasFacultyMixin
 from django.utils import timezone
-from django.urls import reverse_lazy, reverse
-from django.db.models import Count, Avg, Q
-import logging
+from django.urls import reverse
+from django.db.models import Count, Q
+
 
 class FacultyStaffView(HasFacultyMixin, TemplateView):
-    template_name = 'profiles/faculty/staff/staff.html'
+    template_name = 'profiles/faculty/staff/list.html'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -91,29 +89,33 @@ class FacultyStaffView(HasFacultyMixin, TemplateView):
         today = timezone.now().date()
         table_items = []
 
-        for person in staff:
+        for idx, person in enumerate(staff, start=1):
             missing = DepartmentMissing.objects.filter(
                 person=person,
                 start_date__lte=today,
                 end_date__gte=today
-            ).first()  # ← получаем самую актуальную запись
+            ).first()
 
             missing_info = '-'
             if missing:
                 missing_info = f"{missing.get_reason_display()} ({missing.start_date.strftime('%d.%m')} – {missing.end_date.strftime('%d.%m')})"
-            
+
             table_items.append({
                 'url': reverse('faculty:staff_detail', args=[person.pk]),
                 'fields': [
+                    {'value': idx},
                     {'value': person.full_name},
                     {'value': str(person.rank) if person.rank else '-'},
+                    {'value': str(person.department)},
                     {'value': missing_info}
                 ]
             })
 
         headers = [
+            {'label': '#'},
             {'label': 'ФИО'},
             {'label': 'Звание'},
+            {'label': 'Кафедра'},
             {'label': 'Освобождение'}
         ]
 
@@ -125,6 +127,7 @@ class FacultyStaffView(HasFacultyMixin, TemplateView):
             'duties': Duty.objects.all(),
             'selected_department': department_id,
             'selected_duty': duty_id,
+            'total_people': len(table_items),
         })
 
         return context

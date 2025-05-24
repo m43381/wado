@@ -1,0 +1,39 @@
+{% extends "base_account.html" %}
+{% load static %}
+{% block title %}{{ person.full_name }} | Детали сотрудника{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'css/profile.css' %}">
+<link rel="stylesheet" href="{% static 'css/forms.css' %}">
+{% endblock %}
+
+{% block account_content %}
+    <div class="profile-card">
+        <div class="profile-section">
+            <div class="profile-title">
+                        <h3>Основная информация</h3>
+                    </div>
+                </div>
+                <div class="info-grid">
+                    <div class="info-item">
+                        <label>ФИО</label>
+                        <p class="form-static">{{ person.full_name }}</p>
+                    </div>
+
+                    <div class="info-item">
+                        <label>Звание</label>
+                        <p class="form-static">{{ person.rank|default:"–" }}</p>
+                    </div>
+
+                    <div class="info-item">
+                        <label>Кафедра</label>
+                        <p class="form-static">{{ person.department.name|default:"–" }}</p>
+                    </div>
+                </div>
+            </div>
+            <a href="{% url 'commandant:staff' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Назад к списку
+            </a>
+        </div>
+    </div>
+{% endblock %}
