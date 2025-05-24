@@ -7,10 +7,6 @@
 <link rel="stylesheet" href="{% static 'css/profile.css' %}">
 {% endblock %}
 
-{% block sitebar_menu %}
-<li><a href="{% url 'faculty:profile' %}" class="nav-item active">Профиль факультета</a></li>
-<!-- Здесь можно добавить другие пункты меню для факультета -->
-{% endblock %}
 
 {% block account_content %}
 <div class="profile-container">
@@ -90,7 +86,7 @@
                             <span class="stat-label">Сотрудников</span>
                         </div>
                         <div class="stat-item">
-                            <span class="stat-value">{{ department.avg_workload|floatformat:1 }}</span>
+                            <span class="stat-value">{{ department.avg_workload|default:0.0|floatformat:1 }}</span>
                             <span class="stat-label">Ср. нагрузка</span>
                         </div>
                     </div>

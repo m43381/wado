@@ -1,0 +1,37 @@
+{% extends "base_account.html" %}
+{% load static %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'css/forms.css' %}">
+{% endblock %}
+
+{% block account_content %}
+<div class="form-page">
+    <div class="form-card">
+        <h2 class="form-title">
+            {% if icon %}<i class="fas fa-{{ icon }}"></i>{% endif %}
+            {{ title }}
+        </h2>
+
+        <form method="post" class="staff-form">
+            {% csrf_token %}
+            <div class="form-body">
+                {% block form_body %}
+                <!-- Содержимое формы будет здесь -->
+                {% endblock %}
+            </div>
+
+            <div class="form-actions">
+                {% block form_actions %}
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Сохранить
+                    </button>
+                    <a href="{{ cancel_url }}" class="btn btn-secondary">
+                        <i class="fas fa-times"></i> Отмена
+                    </a>
+                {% endblock %}
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

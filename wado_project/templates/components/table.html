@@ -1,0 +1,31 @@
+<div class="table-responsive">
+    <table class="data-table {{ class }}">
+        {% if caption %}
+        <caption>{{ caption }}</caption>
+        {% endif %}
+        
+        <thead>
+            <tr>
+                {% for header in headers %}
+                <th>{{ header.label }}</th>
+                {% endfor %}
+            </tr>
+        </thead>
+
+        <tbody>
+            {% for item in items %}
+            <tr class="clickable-row" data-url="{{ item.url }}">
+                {% for field in item.fields %}
+                <td>{{ field.value|safe }}</td>
+                {% endfor %}
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="{{ headers|length }}" class="text-center">
+                    Нет данных
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>

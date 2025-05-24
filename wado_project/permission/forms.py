@@ -1,32 +1,47 @@
+# permission/forms.py
+
 from django import forms
 from people.models import People
 from duty.models import Duty
 from .models import DepartmentDutyPermission
 
+
 class DepartmentPermissionForm(forms.ModelForm):
     duties = forms.ModelMultipleChoiceField(
-        queryset=Duty.objects.none(),
+        queryset=Duty.objects.all(),
         widget=forms.CheckboxSelectMultiple,
         required=False,
-        label="Доступные наряды"
+        label='Допуски к нарядам'
     )
-    
+
     class Meta:
         model = People
-        fields = []
-    
+        fields = []  # так как мы редактируем только допуски через отдельное поле
+
     def __init__(self, *args, **kwargs):
+        self.request = kwargs.pop('request', None)
         super().__init__(*args, **kwargs)
-        if 'instance' in kwargs:
-            # Используем duty_name вместо name для сортировки
-            self.fields['duties'].queryset = Duty.objects.all().order_by('duty_name')
-            self.fields['duties'].initial = kwargs['instance'].department_duty_permissions.values_list('duty_id', flat=True)
-    
+
+        if self.instance and hasattr(self.instance, 'department_duty_permissions'):
+            current_duties = DepartmentDutyPermission.objects.filter(person=self.instance).values_list('duty', flat=True)
+            self.fields['duties'].initial = list(current_duties)
+
+        # Убираем заголовки "Выберите" из ManyToMany
+        self.fields['duties'].widget.attrs.update({
+            'class': 'custom-duty-checkboxes'
+        })
+
     def save(self, commit=True):
-        person = super().save(commit=False)
-        if commit:
-            person.save()
-            person.department_duty_permissions.all().delete()
-            for duty in self.cleaned_data['duties']:
-                DepartmentDutyPermission.objects.create(person=person, duty=duty)
+        person = self.instance
+        
+        # Получаем новые допуски из формы
+        selected_duties = self.cleaned_data.get('duties', [])
+
+        # Удаляем старые допуски
+        DepartmentDutyPermission.objects.filter(person=person).delete()
+
+        # Создаём новые
+        for duty in selected_duties:
+            DepartmentDutyPermission.objects.create(person=person, duty=duty)
+
         return person

@@ -7,13 +7,6 @@
 <link rel="stylesheet" href="{% static 'css/department.css' %}">
 {% endblock %}
 
-{% block sitebar_menu %}
-<li><a href="{% url 'department:profile' %}" class="nav-item">Профиль кафедры</a></li>
-<li><a href="{% url 'department:people:staff' %}" class="nav-item active">Личный состав</a></li>
-<li><a href="{% url 'department:missing:department_list' %}" class="nav-item">Освобождения</a></li>
-<li><a href="{% url 'department:permission:department_list' %}" class="nav-item">Допуски</a></li>
-{% endblock %}
-
 {% block account_content %}
 <div class="department-staff-container">
     <div class="header-with-button">
@@ -22,31 +15,9 @@
             <i class="fas fa-plus"></i> Добавить сотрудника
         </a>
     </div>
-    
+
     {% if staff %}
-    <div class="table-responsive">
-        <table class="staff-table">
-            <thead>
-                <tr>
-                    <th>ФИО</th>
-                    <th>Звание</th>
-                    <th>Последний наряд</th>
-                    <th>Нагрузка</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for person in staff %}
-                <tr onclick="window.location='{% url 'department:people:edit' person.id %}';" 
-                    style="cursor: pointer;">
-                    <td>{{ person.full_name }}</td>
-                    <td>{{ person.rank }}</td>
-                    <td>{{ person.last_duty_date|date:"d.m.Y"|default:"-" }}</td>
-                    <td>{{ person.workload }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
+        {% include "components/table.html" with headers=headers items=table_items class="staff-table" %}
     {% else %}
     <div class="empty-message">
         <p>Нет данных о сотрудниках кафедры</p>
@@ -56,23 +27,4 @@
     </div>
     {% endif %}
 </div>
-{% endblock %}
-
-{% block extra_js %}
-
-<!-- Скрипт для обработки кликов -->
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Добавляем hover-эффект для строк
-    const rows = document.querySelectorAll('.staff-table tbody tr');
-    rows.forEach(row => {
-        row.addEventListener('mouseenter', function() {
-            this.style.backgroundColor = '#333';
-        });
-        row.addEventListener('mouseleave', function() {
-            this.style.backgroundColor = '';
-        });
-    });
-});
-</script>
 {% endblock %}

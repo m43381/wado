@@ -7,10 +7,6 @@
 <link rel="stylesheet" href="{% static 'css/profile.css' %}">
 {% endblock %}
 
-{% block sitebar_menu %}
-<li><a href="{% url 'commandant:profile' %}" class="nav-item active">Профиль коменданта</a></li>
-<li><a href="{% url 'commandant:duty:list' %}" class="nav-item">Наряды</a></li>
-{% endblock %}
 
 {% block account_content %}
 <div class="profile-container">

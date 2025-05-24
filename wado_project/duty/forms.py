@@ -1,7 +1,13 @@
+# duty/forms.py
+
 from django import forms
 from .models import Duty
 
 class DutyForm(forms.ModelForm):
+    def __init__(self, *args, **kwargs):
+        self.request = kwargs.pop('request', None)  # ← здесь забираем request
+        super().__init__(*args, **kwargs)
+
     class Meta:
         model = Duty
         fields = ['duty_name', 'duty_weight']
@@ -10,23 +16,9 @@ class DutyForm(forms.ModelForm):
             'duty_weight': 'Вес наряда'
         }
         widgets = {
-            'duty_name': forms.TextInput(attrs={
-                'class': 'form-control',
-                'placeholder': 'Введите название наряда'
-            }),
-            'duty_weight': forms.NumberInput(attrs={
-                'class': 'form-control',
-                'placeholder': 'Укажите вес наряда',
-                'step': '0.01'
-            })
+            'duty_name': forms.TextInput(attrs={'class': 'form-control'}),
+            'duty_weight': forms.NumberInput(attrs={'class': 'form-control'})
         }
         error_messages = {
-            'duty_name': {
-                'unique': 'Наряд с таким названием уже существует',
-                'required': 'Это поле обязательно для заполнения'
-            },
-            'duty_weight': {
-                'required': 'Это поле обязательно для заполнения',
-                'invalid': 'Введите корректное числовое значение'
-            }
+            'duty_name': {'unique': 'Наряд с таким названием уже существует'},
         }

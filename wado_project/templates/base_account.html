@@ -1,19 +1,17 @@
 {% extends "base.html" %}
+{% load static %}
+<link rel="stylesheet" href="{% static 'css/base.css' %}">
+<link rel="stylesheet" href="{% static 'css/buttons.css' %}">
+<link rel="stylesheet" href="{% static 'css/forms.css' %}">
+<link rel="stylesheet" href="{% static 'css/department.css' %}">
 
 {% block content %}
 <div class="account-layout">
-    <aside class="sidebar">
-        <nav class="sidebar-nav">
-            <h3 class="sidebar-title">Меню</h3>
-            <ul>
-                {% block sitebar_menu %}
-                {% endblock %}
-                <li><a href="{% url 'logout' %}" class="nav-item logout">Выйти</a></li>
-            </ul>
-        </nav>
-    </aside>
+    {% include "includes/sidebar.html" %}
+    
     <div class="account-content">
         {% block account_content %}
+        <!-- Контент будет здесь -->
         {% endblock %}
     </div>
 </div>

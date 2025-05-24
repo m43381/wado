@@ -7,13 +7,6 @@
 <link rel="stylesheet" href="{% static 'css/profile.css' %}">
 {% endblock %}
 
-{% block sitebar_menu %}
-<li><a href="{% url 'department:profile' %}" class="nav-item active">Профиль кафедры</a></li>
-<li><a href="{% url 'department:people:staff' %}" class="nav-item">Личный состав</a></li>
-<li><a href="{% url 'department:missing:department_list' %}" class="nav-item">Освобождения</a></li>
-<li><a href="{% url 'department:permission:department_list' %}" class="nav-item">Допуски</a></li>
-{% endblock %}
-
 {% block account_content %}
 <div class="profile-container">
     <div class="profile-header">
@@ -28,53 +21,7 @@
         </div>
     </div>
 
-    <div class="profile-card">
-        <div class="profile-section">
-            <h3><i class="fas fa-user-circle"></i> Основная информация</h3>
-            <div class="info-grid">
-                <div class="info-item">
-                    <span class="info-label">Имя пользователя:</span>
-                    <span class="info-value">{{ user.username }}</span>
-                </div>
-                
-                {% if user.faculty %}
-                <div class="info-item">
-                    <span class="info-label">Факультет:</span>
-                    <span class="info-value">{{ user.faculty }}</span>
-                </div>
-                {% endif %}
-                
-                <div class="info-item">
-                    <span class="info-label">Статус:</span>
-                    <span class="info-value">Активный</span>
-                </div>
-            </div>
-        </div>
-
-        <div class="profile-section">
-            <h3><i class="fas fa-chart-pie"></i> Статистика</h3>
-            <div class="stats-grid">
-                <div class="stat-card">
-                    <div class="stat-icon">
-                        <i class="fas fa-users"></i>
-                    </div>
-                    <div class="stat-info">
-                        <span class="stat-value">{{ staff_count }}</span>
-                        <span class="stat-label">Сотрудников</span>
-                    </div>
-                </div>
-                
-                <div class="stat-card">
-                    <div class="stat-icon">
-                        <i class="fas fa-tasks"></i>
-                    </div>
-                    <div class="stat-info">
-                        <span class="stat-value">{{ avg_workload }}</span>
-                        <span class="stat-label">Средняя нагрузка</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+    {% include "components/card.html" with title="Основная информация" icon="user-circle" body=info_grid %}
+    {% include "components/card.html" with title="Статистика" icon="chart-pie" body=stat_cards %}
 </div>
 {% endblock %}

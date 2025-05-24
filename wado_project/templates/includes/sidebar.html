@@ -1,0 +1,25 @@
+<!-- templates/includes/sidebar.html -->
+
+<aside class="sidebar">
+    <nav class="sidebar-nav">
+        <h3 class="sidebar-title">Меню</h3>
+        <ul>
+            {% for item in menu_items %}
+                <li>
+                    <a href="{{ item.url }}" 
+                       class="nav-item{% if item.active %} active{% endif %}">
+                        {{ item.name }}
+                    </a>
+                </li>
+            {% empty %}
+                <li><a href="#" class="nav-item disabled">Нет доступных пунктов</a></li>
+            {% endfor %}
+
+            <li>
+                <a href="{% url 'authentication:logout' %}" class="nav-item logout">
+                    <i class="fas fa-sign-out-alt"></i> Выйти
+                </a>
+            </li>
+        </ul>
+    </nav>
+</aside>

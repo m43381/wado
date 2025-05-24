@@ -1,15 +1,21 @@
-from django.shortcuts import render, redirect
-from django.contrib.auth import login, logout
-from django.contrib.auth.views import LoginView, LogoutView
-from django.urls import reverse_lazy
-from django.contrib.auth.mixins import LoginRequiredMixin
-from django.contrib.auth.decorators import login_required
-from django.contrib.auth import get_user_model
-from django.contrib import messages
+# authentication/views.py
 
+from django.views.generic import TemplateView
+from django.contrib.auth.mixins import UserPassesTestMixin
+from django.urls import reverse_lazy
+from django.contrib.auth.views import LoginView
+from django.contrib.auth import logout
+from django.shortcuts import redirect
+from django.contrib import messages
+from django.contrib.auth.views import LogoutView
+
+class CustomLogoutView(LogoutView):
+    next_page = reverse_lazy('home')  # или другая страница после выхода
+
+# Вход через CBV
 class CustomLoginView(LoginView):
     template_name = 'authentication/login.html'
-    
+
     def get_success_url(self):
         user = self.request.user
         if user.is_superuser:
@@ -21,32 +27,28 @@ class CustomLoginView(LoginView):
         elif user.groups.filter(name='Кафедра').exists():
             return reverse_lazy('department:profile')
         else:
-            messages.warning(self.request, 'Ваш аккаунт не имеет назначенных прав доступа')
+            messages.warning(self.request, 'Вам не назначены права доступа')
             return reverse_lazy('login')
 
-class CustomLogoutView(LogoutView):
-    next_page = reverse_lazy('home')
 
-@login_required
-def profile_redirect(request):
-    print(f"User: {request.user}")
-    print(f"Groups: {list(request.user.groups.all())}")
-    print(f"Has commandant attr: {hasattr(request.user, 'commandant')}")
-    
-    if request.user.is_superuser:
-        return redirect('admin:index')
-    elif request.user.groups.filter(name='Комендант').exists():
-        print("Redirecting to commandant profile")
-        return redirect('commandant:profile')
-    if request.user.is_superuser:
-        return redirect('admin:index')
-    elif request.user.groups.filter(name='Комендант').exists():
-        print('okkkkkk')
-        return redirect('commandant:profile')
-    elif request.user.groups.filter(name='Факультет').exists():
-        return redirect('faculty:profile')
-    elif request.user.groups.filter(name='Кафедра').exists():
-        return redirect('department:profile')
-    else:
-        messages.warning(request, 'Ваш аккаунт не имеет назначенных прав доступа')
-        return redirect('login')
+# Выход
+def custom_logout_view(request):
+    logout(request)
+    return redirect('home')
+
+
+# Редирект после входа
+class ProfileRedirectView(TemplateView):
+    def get(self, request, *args, **kwargs):
+        user = request.user
+        if user.is_superuser:
+            return redirect('admin:index')
+        elif user.groups.filter(name='Комендант').exists():
+            return redirect('commandant:profile')
+        elif user.groups.filter(name='Факультет').exists():
+            return redirect('faculty:profile')
+        elif user.groups.filter(name='Кафедра').exists():
+            return redirect('department:profile')
+        else:
+            messages.warning(request, 'Вам не назначены права доступа')
+            return redirect('login')

@@ -1,0 +1,13 @@
+<div class="stats-grid">
+    {% for stat in stats %}
+    <div class="stat-card">
+        <div class="stat-icon">
+            <i class="fas fa-{{ stat.icon }}"></i>
+        </div>
+        <div class="stat-info">
+            <span class="stat-value">{{ stat.value }}</span>
+            <span class="stat-label">{{ stat.label }}</span>
+        </div>
+    </div>
+    {% endfor %}
+</div>

@@ -1,0 +1,5 @@
+<div class="form-row">
+    {% for field in fields %}
+    {% include "components/form_group.html" with field=field %}
+    {% endfor %}
+</div>

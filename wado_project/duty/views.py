@@ -1,53 +1,62 @@
-from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth.decorators import login_required
-from django.contrib import messages
+# duty/views.py
+
+from django.views.generic import (
+    ListView,
+    CreateView,
+    UpdateView,
+    DeleteView
+)
 from .models import Duty
 from .forms import DutyForm
+from core.mixins import (
+    LoginRequiredMixin,
+    GroupRequiredMixin,
+    SuccessMessageMixin,
+    BaseDeleteView
+)
 
-@login_required
-def duty_list(request):
-    dutys = Duty.objects.all().order_by('duty_name')
-    return render(request, 'profiles/commandant/duty/duty_list.html', {
-        'dutys': dutys,
-    })
+from django.urls import reverse_lazy
 
-@login_required
-def add_duty(request):
-    if request.method == 'POST':
-        form = DutyForm(request.POST)
-        if form.is_valid():
-            form.save()
-            messages.success(request, 'Наряд успешно добавлен')
-            return redirect('commandant:duty:list')
-    else:
-        form = DutyForm()
-    
-    return render(request, 'profiles/commandant/duty/add_duty.html', {
-        'form': form,
-    })
 
-@login_required
-def edit_duty(request, pk):
-    duty = get_object_or_404(Duty, pk=pk)
-    
-    if request.method == 'POST':
-        form = DutyForm(request.POST, instance=duty)
-        if form.is_valid():
-            form.save()
-            messages.success(request, 'Наряд успешно обновлен')
-            return redirect('commandant:duty:list')
-    else:
-        form = DutyForm(instance=duty)
-    
-    return render(request, 'profiles/commandant/duty/edit_duty.html', {
-        'form': form,
-        'duty': duty
-    })
+# Список нарядов
+class DutyListView(GroupRequiredMixin, ListView):
+    model = Duty
+    context_object_name = 'dutys'
+    template_name = 'profiles/commandant/duty/duty_list.html'
+    group_required = ['Комендант']
 
-@login_required
-def delete_duty(request, pk):
-    duty = get_object_or_404(Duty, pk=pk)
-    if request.method == 'POST':
-        duty.delete()
-        messages.success(request, f'Наряд "{duty.duty_name}" успешно удален')
-    return redirect('commandant:duty:list')
+
+# Добавление наряда
+class DutyCreateView(GroupRequiredMixin, SuccessMessageMixin, CreateView):
+    model = Duty
+    form_class = DutyForm
+    template_name = 'profiles/commandant/duty/add_duty.html'
+    success_url = reverse_lazy('commandant:duty:list')
+    success_message = 'Наряд успешно добавлен'
+    error_message = 'Ошибка при добавлении наряда'
+    group_required = ['Комендант']
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['request'] = self.request
+        return kwargs
+
+
+# Редактирование наряда
+class DutyUpdateView(GroupRequiredMixin, SuccessMessageMixin, UpdateView):
+    model = Duty
+    form_class = DutyForm
+    template_name = 'profiles/commandant/duty/edit_duty.html'
+    success_url = reverse_lazy('commandant:duty:list')
+    success_message = 'Наряд успешно обновлен'
+    error_message = 'Ошибка при редактировании наряда'
+    group_required = ['Комендант']
+
+
+# Удаление наряда
+class DutyDeleteView(GroupRequiredMixin, BaseDeleteView):
+    model = Duty
+    success_url = 'commandant:duty:list'
+    success_message = 'Наряд удален'
+    error_message = 'Ошибка при удалении наряда'
+    group_required = ['Комендант']

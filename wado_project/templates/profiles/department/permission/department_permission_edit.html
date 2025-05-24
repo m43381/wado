@@ -4,18 +4,13 @@
 {% block extra_head %}
 <link rel="stylesheet" href="{% static 'css/forms.css' %}">
 {% endblock %}
-{% block sitebar_menu %}
-<li><a href="{% url 'department:profile' %}" class="nav-item">Профиль кафедры</a></li>
-<li><a href="{% url 'department:people:staff' %}" class="nav-item">Личный состав</a></li>
-<li><a href="{% url 'department:missing:department_list' %}" class="nav-item">Освобождения</a></li>
-<li><a href="{% url 'department:permission:department_list' %}" class="nav-item active">Допуски</a></li>
-{% endblock %}
+
 
 {% block account_content %}
 <div class="form-page">
     <div class="form-card">
         <h2 class="form-title">
-            <i class="fas fa-user-check"></i> Допуски для {{ person.full_name }}
+            <i class="fas fa-user-check"></i> Допуски для {{ person.department }} кафедры
         </h2>
         
         <form method="post">

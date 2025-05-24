@@ -1,0 +1,16 @@
+{% extends "pages/generic_form.html" %}
+{% block title %}Подтвердите удаление{% endblock %}
+{% block icon %}trash{% endblock %}
+
+{% block form_body %}
+    <p>Вы действительно хотите удалить сотрудника <strong>{{ object.full_name }}</strong>?</p>
+{% endblock %}
+
+{% block form_actions %}
+    <button type="submit" class="btn btn-danger">
+        <i class="fas fa-trash"></i> Да, удалить
+    </button>
+    <a href="{% url 'department:people:staff' %}" class="btn btn-secondary">
+        <i class="fas fa-times"></i> Отмена
+    </a>
+{% endblock %}
