@@ -1,0 +1,158 @@
+{% extends "base_account.html" %}
+{% block title %}Новое сообщение{% endblock %}
+
+
+
+{% block account_content %}
+<div class="account-section notification-form-container">
+    <h2>Написать сообщение</h2>
+
+    <!-- Быстрые шаблоны -->
+    <div class="quick-buttons quick-buttons--horizontal">
+        {% if user_type == 'department' %}
+            <button type="button" class="btn btn-secondary" data-message="Расход изменен">Расход изменен</button>
+            <button type="button" class="btn btn-secondary" data-message="Изменены освобожденные">Освобожденные</button>
+        {% elif user_type == 'faculty' %}
+            <button type="button" class="btn btn-secondary" data-message="Данные по кафедрам собраны">Данные собраны</button>
+            <button type="button" class="btn btn-secondary" data-message="Обновите данные по нагрузке">Обновите нагрузку</button>
+        {% elif user_type == 'commandant' %}
+            <button type="button" class="btn btn-secondary" data-message="Наряды распределены">Наряды готовы</button>
+            <button type="button" class="btn btn-secondary" data-message="Запросите данные по факультетам">Запрос данных</button>
+        {% endif %}
+    </div>
+
+    <!-- Форма -->
+    <form method="post" class="auth-form">
+        {% csrf_token %}
+
+        <!-- Получатель (стилизованный) -->
+        <div class="form-group">
+            <label for="{{ form.recipient.id_for_label }}">Получатель:</label>
+            <select name="recipient" id="{{ form.recipient.id_for_label }}" class="form-control">
+                {% for option in form.recipient.field.queryset %}
+                    <option value="{{ option.id }}"
+                        {% if option == form.recipient.value %}
+                            selected
+                        {% endif %}
+                    >
+                        {{ option.get_full_name|default:option.username }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <!-- Сообщение -->
+        <div class="form-group">
+            <label for="{{ form.message.id_for_label }}">Сообщение:</label>
+            {{ form.message }}
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Отправить</button>
+        </div>
+    </form>
+</div>
+
+<script>
+    document.querySelectorAll('.btn-secondary').forEach(button => {
+        button.addEventListener('click', () => {
+            const messageInput = document.querySelector('#id_message');
+            messageInput.value = button.getAttribute('data-message');
+        });
+    });
+</script>
+
+<style>
+    textarea#id_message {
+    width: 100%;
+    padding: 10px;
+    background-color: #333;
+    border: 1px solid #3e3e42;
+    border-radius: 4px;
+    color: #f0f0f0;
+    font-size: 14px;
+    resize: vertical;
+}
+    .notification-form-container {
+        max-width: 600px;
+        margin: auto;
+    }
+
+    .quick-buttons {
+        margin-bottom: 20px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+    .btn {
+        padding: 8px 16px;
+        border-radius: 4px;
+        font-size: 14px;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+        text-align: center;
+        white-space: nowrap;
+        border: none;
+        font-weight: 500;
+    }
+
+    .btn-secondary {
+        background-color: #333;
+        color: #f0f0f0;
+        border: 1px solid #3e3e42;
+    }
+
+    .btn-secondary:hover {
+        background-color: #444;
+    }
+
+    .btn-primary {
+        background-color: #4ec9b0;
+        color: #1e1e1e;
+        border: none;
+    }
+
+    .btn-primary:hover {
+        background-color: #3aa794;
+    }
+
+    /* Стили для выпадающего списка */
+    .form-group {
+        margin-bottom: 1rem;
+    }
+
+    label {
+        display: block;
+        margin-bottom: 5px;
+        font-size: 14px;
+        color: #ccc;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 10px;
+        background-color: #333;
+        border: 1px solid #3e3e42;
+        border-radius: 4px;
+        color: #f0f0f0;
+        font-size: 14px;
+    }
+
+    .form-control:focus {
+        outline: none;
+        border-color: #4ec9b0;
+        box-shadow: 0 0 0 2px rgba(78, 201, 176, 0.2);
+    }
+
+    textarea.form-control {
+        resize: vertical;
+        min-height: 100px;
+    }
+
+    .form-actions {
+        margin-top: 20px;
+        text-align: right;
+    }
+</style>
+{% endblock %}

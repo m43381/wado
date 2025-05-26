@@ -1,32 +1,36 @@
 from django.urls import reverse
 from .utils import get_user_type
 
+# your_app/context_processors.py
+
 def sidebar_menu(request):
     if not request.user.is_authenticated:
         return {'menu_items': []}
 
     menu_items = []
     current_path = request.path
-
     user_type = get_user_type(request.user)
 
     if user_type == 'commandant':
         menu_items = [
-            {'name': 'Профиль коменданта', 'url_name': 'commandant:profile', 'active': False},
-            {'name': 'Наряды', 'url_name': 'commandant:duty:list', 'active': False},
-            {'name': 'Личный состав', 'url_name': 'commandant:staff', 'active': False},
+            {'name': 'Профиль коменданта', 'url_name': 'commandant:profile'},
+            {'name': 'Наряды', 'url_name': 'commandant:duty:list'},
+            {'name': 'Личный состав', 'url_name': 'commandant:staff'},
+            {'name': 'Уведомления', 'url_name': 'notifications:list'},
         ]
     elif user_type == 'faculty':
         menu_items = [
-            {'name': 'Профиль факультета', 'url_name': 'faculty:profile', 'active': False},
-            {'name': 'Личный состав', 'url_name': 'faculty:staff', 'active': False},
+            {'name': 'Профиль факультета', 'url_name': 'faculty:profile'},
+            {'name': 'Личный состав', 'url_name': 'faculty:staff'},
+            {'name': 'Уведомления', 'url_name': 'notifications:list'},
         ]
     elif user_type == 'department':
         menu_items = [
-            {'name': 'Профиль кафедры', 'url_name': 'department:profile', 'active': False},
-            {'name': 'Личный состав', 'url_name': 'department:people:staff', 'active': False},
-            {'name': 'Освобождения', 'url_name': 'department:missing:department_list', 'active': False},
-            {'name': 'Допуски', 'url_name': 'department:permission:department_list', 'active': False},
+            {'name': 'Профиль кафедры', 'url_name': 'department:profile'},
+            {'name': 'Личный состав', 'url_name': 'department:people:staff'},
+            {'name': 'Освобождения', 'url_name': 'department:missing:department_list'},
+            {'name': 'Допуски', 'url_name': 'department:permission:department_list'},
+            {'name': 'Уведомления', 'url_name': 'notifications:list'},
         ]
 
     for item in menu_items:
@@ -37,7 +41,10 @@ def sidebar_menu(request):
             item['url'] = '#'
             item['active'] = False
 
+    unread_count = request.user.received_notifications.filter(is_read=False).count()
+
     return {
         'user_type': user_type,
-        'menu_items': menu_items
+        'menu_items': menu_items,
+        'unread_notifications': unread_count
     }

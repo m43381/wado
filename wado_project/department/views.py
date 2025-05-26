@@ -32,7 +32,7 @@ class DepartmentDashboardView(HasDepartmentMixin, TemplateView):
         # Формируем данные для статистики
         stats = [
             {"icon": "users", "value": staff_stats['total'], "label": "Сотрудников"},
-            {"icon": "tasks", "value": f"{round(staff_stats['avg_workload'], 1) if staff_stats['avg_workload'] else 0}%", "label": "Средняя нагрузка"},
+            {"icon": "tasks", "value": f"{round(staff_stats['avg_workload'], 1) if staff_stats['avg_workload'] else 0}", "label": "Средняя нагрузка"},
         ]
         stat_cards = render_to_string('components/stat-cards.html', {'stats': stats}, request=self.request)
 

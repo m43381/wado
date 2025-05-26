@@ -1,0 +1,191 @@
+{% extends "base_account.html" %}
+{% block title %}Сообщения — Полученные и отправленные{% endblock %}
+
+{% block account_content %}
+<div class="account-section">
+    <div class="section-header">
+        <h2>Сообщения</h2>
+        <a href="{% url 'notifications:send' %}" class="header-btn header-btn--primary">
+            Новое сообщение
+        </a>
+        
+    </div>
+    
+    
+
+    <!-- Вкладки -->
+    <div class="tabs">
+        <a href="#" class="tab tab--active" data-tab="received">Полученные</a>
+        <a href="#" class="tab" data-tab="sent">Отправленные</a>
+    </div>
+
+    <!-- Таблица полученных -->
+    <div id="received" class="notification-table-container active">
+        {% if notifications.received %}
+            <table class="notification-table">
+                <thead>
+                    <tr>
+                        <th>От кого</th>
+                        <th>Сообщение</th>
+                        <th>Дата</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for note in notifications.received %}
+                        <tr class="{% if not note.is_read %}unread{% endif %}">
+                            <td>{{ note.sender }}</td>
+                            <td>{{ note.message }}</td>
+                            <td>{{ note.created_at|date:"d.m.Y H:i" }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p class="empty-message">Нет полученных сообщений</p>
+        {% endif %}
+    </div>
+
+    <!-- Таблица отправленных -->
+    <div id="sent" class="notification-table-container" style="display: none;">
+        {% if notifications.sent %}
+            <table class="notification-table">
+                <thead>
+                    <tr>
+                        <th>Кому</th>
+                        <th>Сообщение</th>
+                        <th>Дата</th>
+                        <th>Статус</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for note in notifications.sent %}
+                        <tr>
+                            <td>{{ note.recipient }}</td>
+                            <td>{{ note.message }}</td>
+                            <td>{{ note.created_at|date:"d.m.Y H:i" }}</td>
+                            <td class="status {% if not note.is_read %}unread{% endif %}">
+                                {% if note.is_read %}
+                                    Прочитано
+                                {% else %}
+                                    Не прочитано
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p class="empty-message">Нет отправленных сообщений</p>
+        {% endif %}
+    </div>
+</div>
+<br>
+<form action="{% url 'notifications:clear' %}" method="post" onsubmit="return confirm('Вы уверены? Это удалит все ваши сообщения.')">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-danger">Очистить все</button>
+        </form>
+
+<script>
+    document.querySelectorAll('.tabs .tab').forEach(tab => {
+        tab.addEventListener('click', function(e) {
+            e.preventDefault();
+            const target = this.getAttribute('data-tab');
+
+            document.querySelectorAll('.notification-table-container').forEach(container => {
+                container.style.display = container.id === target ? 'block' : 'none';
+            });
+
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('tab--active'));
+            this.classList.add('tab--active');
+        });
+    });
+</script>
+
+<style>
+    .btn-danger {
+        background-color: #e74c3c;
+        color: white;
+        border: none;
+    }
+
+    .btn-danger:hover {
+        background-color: #c0392b;
+    }
+    /* В стиль таблицы */
+    .status {
+        color: #aaa;
+    }
+
+    .status.unread {
+        color: #4ec9b0;
+        font-weight: bold;
+    }
+    .section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 15px;
+    }
+
+    .tabs {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 20px;
+    }
+
+    .tab {
+        padding: 8px 16px;
+        border-radius: 4px;
+        background-color: #333;
+        color: #f0f0f0;
+        text-decoration: none;
+        font-weight: 500;
+        transition: background-color 0.2s ease;
+        cursor: pointer;
+    }
+
+    .tab.tab--active,
+    .tab:hover {
+        background-color: #4ec9b0;
+        color: #1e1e1e;
+    }
+
+    .notification-table-container {
+        width: 100%;
+    }
+
+    .notification-table {
+        width: 100%;
+        border-collapse: collapse;
+        background-color: #2d2d2d;
+        border-radius: 6px;
+        overflow: hidden;
+    }
+
+    .notification-table thead {
+        background-color: #252526;
+    }
+
+    .notification-table th,
+    .notification-table td {
+        padding: 12px 15px;
+        text-align: left;
+        border-bottom: 1px solid #3e3e42;
+    }
+
+    .notification-table tr:hover {
+        background-color: #333;
+    }
+
+    .notification-table tr.unread {
+        background-color: #33383d;
+    }
+
+    .empty-message {
+        color: #aaa;
+        text-align: center;
+        padding: 20px;
+        font-style: italic;
+    }
+</style>
+{% endblock %}

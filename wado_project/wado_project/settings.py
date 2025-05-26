@@ -21,6 +21,7 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
+    'notifications.apps.NotificationsConfig',
     'core.apps.CoreConfig',
     'faculty.apps.FacultyConfig',
     'commandant.apps.CommandantConfig',

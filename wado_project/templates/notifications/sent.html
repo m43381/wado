@@ -1,0 +1,36 @@
+{% extends "base_account.html" %}
+{% block title %}Отправленные сообщения{% endblock %}
+
+{% block account_content %}
+<div class="account-section">
+    <div class="section-header">
+        <h2>Отправленные сообщения</h2>
+        <a href="{% url 'notifications:send' %}" class="header-btn header-btn--primary">
+            Новое сообщение
+        </a>
+    </div>
+
+    {% if notifications %}
+        <table class="notification-table">
+            <thead>
+                <tr>
+                    <th>Кому</th>
+                    <th>Сообщение</th>
+                    <th>Дата</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for note in notifications %}
+                    <tr>
+                        <td>{{ note.recipient }}</td>
+                        <td>{{ note.message }}</td>
+                        <td>{{ note.created_at|date:"d.m.Y H:i" }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p class="empty-message">Вы ещё ничего не отправили</p>
+    {% endif %}
+</div>
+{% endblock %}

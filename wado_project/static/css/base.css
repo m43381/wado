@@ -35,3 +35,12 @@ body {
     overflow: hidden;
     height: 100vh;
 }
+.badge {
+    background-color: #e74c3c; /* Красный цвет */
+    color: white;
+    padding: 3px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    margin-left: 8px;
+    display: inline-block;
+}

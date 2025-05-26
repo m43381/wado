@@ -5,6 +5,7 @@ from . import views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('notifications/', include('notifications.urls')),
     path('authentication/', include('authentication.urls')),
     path('department/', include('department.urls')),
     path('commandant/', include('commandant.urls')),
