@@ -1,0 +1,67 @@
+<!-- templates/profiles/shared/permission/_list.html -->
+
+{% extends "base_account.html" %}
+{% load static %}
+
+{% block title %}
+    Допуски к нарядам {{ related_type|title }} "{{ object_name }}"
+{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'css/shared.css' %}">
+{% endblock %}
+
+{% block account_content %}
+<div class="people-container">
+    <div class="header-with-button">
+        <h1>
+            Допуски к нарядам 
+            {% if related_type == 'department' %}
+                кафедры {{ object_name }}
+            {% elif related_type == 'faculty' %}
+                факультета {{ object_name }}
+            {% else %}
+                {{ related_type_label }}
+            {% endif %}
+        </h1>
+    </div>
+
+    {% if staff_list %}
+    <div class="table-responsive">
+        <table class="staff-table">
+            <thead>
+                <tr>
+                    <th>ФИО</th>
+                    <th>Звание</th>
+                    <th>Допущенные наряды</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in staff_list %}
+                <tr onclick="window.location='{{ item.url }}';" style="cursor: pointer;">
+                    <td>{{ item.fields.full_name }}</td>
+                    <td>{{ item.fields.rank }}</td>
+                    <td>
+                        {% if item.fields.duties %}
+                            {% for duty in item.fields.duties %}
+                                <span class="permission-badge">{{ duty }}</span>
+                            {% endfor %}
+                        {% else %}
+                            <span class="no-permissions">Нет допусков</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-message">
+        <p>Нет данных о сотрудниках</p>
+        <a href="{{ add_url }}" class="add-button">
+            <i class="fas fa-plus"></i> Добавить первого сотрудника
+        </a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

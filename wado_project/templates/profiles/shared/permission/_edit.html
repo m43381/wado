@@ -1,0 +1,40 @@
+<!-- templates/profiles/shared/permission/_edit.html -->
+
+{% extends "pages/generic_form.html" %}
+{% load static %}
+
+{% block title %}Редактировать допуски{% endblock %}
+{% block icon %}user-check{% endblock %}
+
+{% block form_body %}
+<form method="post">
+    {% csrf_token %}
+    <div class="form-group">
+        <label>Выберите наряды:</label>
+        {% if duty_checkboxes %}
+        <div class="duty-container">
+            {% for duty in duty_checkboxes %}
+            <label class="duty-item">
+                <input type="checkbox" name="duties" value="{{ duty.id }}" {{ duty.checked }}>
+                <div class="duty-info">
+                    <div class="duty-name">{{ duty.name }}</div>
+                    <div class="duty-weight">Вес: {{ duty.weight }}</div>
+                </div>
+            </label>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p class="no-duties">Нет доступных нарядов</p>
+        {% endif %}
+    </div>
+{% endblock %}
+
+{% block form_actions %}
+    <button type="submit" class="btn btn-primary">
+        <i class="fas fa-save"></i> Сохранить
+    </button>
+    <a href="{{ cancel_url }}" class="btn btn-secondary">
+        <i class="fas fa-times"></i> Отмена
+    </a>
+</form>
+{% endblock %}

@@ -1,3 +1,5 @@
+<!-- templates/profiles/shared/people/confirm_delete.html -->
+
 {% extends "pages/generic_form.html" %}
 {% block title %}Подтвердите удаление{% endblock %}
 {% block icon %}trash{% endblock %}
@@ -10,7 +12,7 @@
     <button type="submit" class="btn btn-danger">
         <i class="fas fa-trash"></i> Да, удалить
     </button>
-    <a href="{% url 'department:people:staff' %}" class="btn btn-secondary">
+    <a href="{{ cancel_url }}" class="btn btn-secondary">
         <i class="fas fa-times"></i> Отмена
     </a>
 {% endblock %}

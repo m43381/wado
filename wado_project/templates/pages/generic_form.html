@@ -1,3 +1,5 @@
+<!-- templates/pages/generic_form.html -->
+
 {% extends "base_account.html" %}
 {% load static %}
 
@@ -10,7 +12,7 @@
     <div class="form-card">
         <h2 class="form-title">
             {% if icon %}<i class="fas fa-{{ icon }}"></i>{% endif %}
-            {{ title }}
+            {% block title %}{% endblock %}
         </h2>
 
         <form method="post" class="staff-form">

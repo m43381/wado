@@ -1,8 +1,6 @@
 from django.urls import reverse
 from .utils import get_user_type
 
-# your_app/context_processors.py
-
 def sidebar_menu(request):
     if not request.user.is_authenticated:
         return {'menu_items': []}
@@ -21,7 +19,9 @@ def sidebar_menu(request):
     elif user_type == 'faculty':
         menu_items = [
             {'name': 'Профиль факультета', 'url_name': 'faculty:profile'},
-            {'name': 'Личный состав', 'url_name': 'faculty:staff'},
+            {'name': 'Л/с факультета', 'url_name': 'faculty:staff'},
+            {'name': 'Л/с управления факультета', 'url_name': 'faculty:people:faculty_staff'},
+            {'name': 'Допуски к нарядам', 'url_name': 'faculty:permission:faculty_list'},
             {'name': 'Уведомления', 'url_name': 'notifications:list'},
         ]
     elif user_type == 'department':
@@ -36,8 +36,9 @@ def sidebar_menu(request):
     for item in menu_items:
         try:
             item['url'] = reverse(item['url_name'])
-            item['active'] = current_path.startswith(item['url'])
-        except:
+            # Точное совпадение пути
+            item['active'] = item['url'].rstrip('/') == current_path.rstrip('/')
+        except Exception as e:
             item['url'] = '#'
             item['active'] = False
 

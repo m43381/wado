@@ -19,9 +19,9 @@
         <form method="get" class="filter-form">
             <div class="form-row">
                 <div class="form-group">
-                    <label for="department">Кафедра</label>
+                    <label for="department">Подразделение</label>
                     <select name="department" id="department" class="form-control">
-                        <option value="">Все кафедры</option>
+                        <option value="">Все Подразделения</option>
                         {% for dept in departments %}
                         <option value="{{ dept.id }}" {% if dept.id|str_equal:selected_department %}selected{% endif %}>
                             {{ dept.name }}
