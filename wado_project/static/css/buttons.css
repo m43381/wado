@@ -5,37 +5,66 @@
     align-items: center;
     gap: 0.5rem;
     padding: 0.75rem 1.5rem;
-    border-radius: 6px;
+    border-radius: 4px;
     font-size: 0.95rem;
     font-weight: 500;
     border: none;
     cursor: pointer;
+    text-decoration: none;
+    transition: background-color 0.3s, transform 0.2s;
 }
 
+/* Primary */
 .btn-primary {
     background-color: #4ec9b0;
     color: #1e1e1e;
 }
 .btn-primary:hover {
-    background-color: #3aa796;
+    background-color: #3aa794;
+    transform: translateY(-1px);
 }
 
+/* Active */
+.btn-success {
+    background-color: #4ec9b0cc; /* Акцент с прозрачностью */
+    color: #1e1e1e;
+}
+.btn-success:hover {
+    background-color: #3aa794cc;
+    transform: translateY(-1px);
+}
+
+/* Expired */
+.btn-warning {
+    background-color: #ff6b6b;
+    color: #1e1e1e;
+}
+.btn-warning:hover {
+    background-color: #e65151;
+    transform: translateY(-1px);
+}
+
+/* Danger */
 .btn-danger {
-    background-color: #dc3545;
-    color: white;
+    background-color: #f48771;
+    color: #fff;
 }
 .btn-danger:hover {
-    background-color: #c82333;
+    background-color: #f0624d;
+    transform: translateY(-1px);
 }
 
+/* Secondary */
 .btn-secondary {
     background-color: #3e3e42;
     color: #f0f0f0;
 }
 .btn-secondary:hover {
     background-color: #5a5a5d;
+    transform: translateY(-1px);
 }
 
+/* Small button */
 .btn-sm {
     padding: 0.4rem 0.8rem;
     font-size: 0.9rem;

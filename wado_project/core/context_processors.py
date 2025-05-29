@@ -22,6 +22,7 @@ def sidebar_menu(request):
             {'name': 'Л/с факультета', 'url_name': 'faculty:staff'},
             {'name': 'Л/с управления факультета', 'url_name': 'faculty:people:faculty_staff'},
             {'name': 'Допуски к нарядам', 'url_name': 'faculty:permission:faculty_list'},
+            {'name': 'Освобождения', 'url_name': 'faculty:missing:faculty_list'},  # ← Новая строка
             {'name': 'Уведомления', 'url_name': 'notifications:list'},
         ]
     elif user_type == 'department':
@@ -36,7 +37,6 @@ def sidebar_menu(request):
     for item in menu_items:
         try:
             item['url'] = reverse(item['url_name'])
-            # Точное совпадение пути
             item['active'] = item['url'].rstrip('/') == current_path.rstrip('/')
         except Exception as e:
             item['url'] = '#'

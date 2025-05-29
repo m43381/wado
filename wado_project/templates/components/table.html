@@ -1,9 +1,11 @@
+<!-- components/table.html -->
+
 <div class="table-responsive">
     <table class="data-table {{ class }}">
         {% if caption %}
         <caption>{{ caption }}</caption>
         {% endif %}
-        
+
         <thead>
             <tr>
                 {% for header in headers %}
@@ -16,7 +18,9 @@
             {% for item in items %}
             <tr class="clickable-row" data-url="{{ item.url }}">
                 {% for field in item.fields %}
-                <td>{{ field.value|safe }}</td>
+                <td {% if field.class %}class="{{ field.class }}"{% endif %}>
+                    {{ field.value|safe }}
+                </td>
                 {% endfor %}
             </tr>
             {% empty %}

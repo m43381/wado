@@ -1,6 +1,8 @@
+<!-- templates/profiles/shared/people/_edit.html -->
+
 {% extends "pages/generic_form.html" %}
-{% block title %}Редактировать запись об освобождении{% endblock %}
-{% block icon %}calendar-edit{% endblock %}
+{% block title %}Редактировать Освобождение{% endblock %}
+{% block icon %}user-edit{% endblock %}
 
 {% block form_body %}
     {{ form_body|safe }}
@@ -8,7 +10,7 @@
 
 {% block form_actions %}
     {{ block.super }}
-    
+
     {% if delete_url %}
     <a href="{{ delete_url }}" class="btn btn-danger">
         <i class="fas fa-trash"></i> Удалить

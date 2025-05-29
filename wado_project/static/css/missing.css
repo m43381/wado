@@ -1,0 +1,21 @@
+.status {
+    padding: 5px 10px;
+    border-radius: 4px;
+    font-weight: bold;
+    text-align: center;
+    display: inline-block;
+    font-size: 0.9em;
+}
+
+
+.status-active {
+    color: #4ec9b0cc;
+}
+
+.status-expired {
+    color: #c82333;
+}
+
+.filter-buttons {
+    margin-bottom: 15px;
+}

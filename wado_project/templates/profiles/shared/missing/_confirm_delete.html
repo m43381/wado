@@ -1,17 +1,20 @@
+<!-- templates/profiles/shared/missing/_confirm_delete.html -->
+
 {% extends "pages/generic_form.html" %}
 {% block title %}Подтвердите удаление{% endblock %}
 {% block icon %}trash{% endblock %}
 
 {% block form_body %}
+<form method="post">
+    {% csrf_token %}
     <p>Вы действительно хотите удалить запись:</p>
     <strong>{{ object.person.full_name }} – {{ object.get_reason_display }}</strong>
 {% endblock %}
 
 {% block form_actions %}
-    <button type="submit" class="btn btn-danger">
-        <i class="fas fa-trash"></i> Удалить
-    </button>
-    <a href="{% url 'department:missing:department_list' %}" class="btn btn-secondary">
+    <button type="submit" class="btn btn-danger">Да, удалить</button>
+    <a href="{{ cancel_url }}" class="btn btn-secondary">
         <i class="fas fa-times"></i> Отмена
     </a>
 {% endblock %}
+</form>

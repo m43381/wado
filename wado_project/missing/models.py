@@ -1,29 +1,22 @@
+# missing/models.py
+
 from django.db import models
+from django.utils import timezone
 from people.models import People
 
+
 class MissingReason(models.TextChoices):
-    """Причины освобождения"""
     ILLNESS = 'illness', 'Болезнь'
     BUSINESS_TRIP = 'business_trip', 'Командировка'
     VACATION = 'vacation', 'Отпуск'
     OTHER = 'other', 'Другое'
 
+
 class FacultyMissing(models.Model):
-    """Освобождение от факультета"""
-    person = models.ForeignKey(
-        People,
-        verbose_name='Сотрудник',
-        on_delete=models.CASCADE,
-        related_name='faculty_missing'
-    )
+    person = models.ForeignKey(People, on_delete=models.CASCADE, related_name='faculty_missing')
     start_date = models.DateField('Дата начала')
     end_date = models.DateField('Дата окончания')
-    reason = models.CharField(
-        'Причина',
-        max_length=50,
-        choices=MissingReason.choices,
-        default=MissingReason.ILLNESS
-    )
+    reason = models.CharField('Причина', max_length=50, choices=MissingReason.choices, default=MissingReason.ILLNESS)
     comment = models.TextField('Комментарий', blank=True, null=True)
 
     class Meta:
@@ -32,24 +25,17 @@ class FacultyMissing(models.Model):
         ordering = ['-start_date']
 
     def __str__(self):
-        return f"{self.person} - {self.get_reason_display()} ({self.start_date} - {self.end_date})"
+        return f"{self.person} - {self.get_reason_display()} ({self.start_date} – {self.end_date})"
 
+    @property
+    def is_active(self):
+        return self.end_date >= timezone.now().date()
+    
 class DepartmentMissing(models.Model):
-    """Освобождение от кафедры"""
-    person = models.ForeignKey(
-        People,
-        verbose_name='Сотрудник',
-        on_delete=models.CASCADE,
-        related_name='department_missing'
-    )
+    person = models.ForeignKey(People, on_delete=models.CASCADE, related_name='department_missing')
     start_date = models.DateField('Дата начала')
     end_date = models.DateField('Дата окончания')
-    reason = models.CharField(
-        'Причина',
-        max_length=50,
-        choices=MissingReason.choices,
-        default=MissingReason.ILLNESS
-    )
+    reason = models.CharField('Причина', max_length=50, choices=MissingReason.choices, default=MissingReason.ILLNESS)
     comment = models.TextField('Комментарий', blank=True, null=True)
 
     class Meta:
@@ -58,4 +44,8 @@ class DepartmentMissing(models.Model):
         ordering = ['-start_date']
 
     def __str__(self):
-        return f"{self.person} - {self.get_reason_display()} ({self.start_date} - {self.end_date})"
+        return f"{self.person} - {self.get_reason_display()} ({self.start_date} – {self.end_date})"
+
+    @property
+    def is_active(self):
+        return self.end_date >= timezone.now().date()

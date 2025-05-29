@@ -1,0 +1,45 @@
+<!-- templates/profiles/shared/missing/_list.html -->
+
+{% extends "base_account.html" %}
+{% load static %}
+
+{% block title %}
+    Освобождения {{ related_type|title }} "{{ object_name }}"
+{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'css/missing.css' %}">
+{% endblock %}
+
+{% block account_content %}
+<div class="missing-container">
+    <div class="header-with-button">
+        <h1>
+            Освобождения 
+            {% if related_type == 'department' %}
+                кафедры {{ object_name }}
+            {% elif related_type == 'faculty' %}
+                факультета {{ object_name }}
+            {% else %}
+                {{ related_type_label }}
+            {% endif %}
+        </h1>
+        <a href="{% url namespace|add:':missing:'|add:related_field|add:'_add' %}" class="add-button">
+            <i class="fas fa-calendar-plus"></i> Добавить запись
+        </a>
+    </div>
+
+    {% include "components/filter_buttons.html" with active_filter=filter_type %}
+
+    {% if object_list %}
+        {% include "components/table.html" with headers=headers items=table_items class="staff-table" %}
+    {% else %}
+    <div class="empty-message">
+        <p>Нет записей о пропусках</p>
+        <a href="{% url namespace|add:':missing:'|add:related_field|add:'_add' %}" class="add-button">
+            <i class="fas fa-calendar-plus"></i> Добавить первую запись
+        </a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

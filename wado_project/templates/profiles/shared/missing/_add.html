@@ -1,0 +1,21 @@
+<!-- templates/profiles/shared/missing/_add.html -->
+
+{% extends "pages/generic_form.html" %}
+{% block title %}Добавить запись об освобождении{% endblock %}
+{% block icon %}calendar-plus{% endblock %}
+
+{% block form_body %}
+<form method="post">
+    {% csrf_token %}
+    {{ form_body|safe }}
+{% endblock %}
+
+{% block form_actions %}
+    <button type="submit" class="btn btn-primary">
+        <i class="fas fa-save"></i> Сохранить
+    </button>
+    <a href="{{ cancel_url }}" class="btn btn-secondary">
+        <i class="fas fa-times"></i> Отмена
+    </a>
+</form>
+{% endblock %}
