@@ -49,12 +49,13 @@ from django.views.generic import TemplateView
 from people.models import People
 from unit.models import Department
 from duty.models import Duty
-from missing.models import DepartmentMissing
+from missing.models import DepartmentMissing, FacultyMissing
 from permission.models import DepartmentDutyPermission
 from core.mixins import HasFacultyMixin
 from django.utils import timezone
 from django.urls import reverse
 from django.db.models import Count, Q
+from django.db.models import Value, BooleanField
 
 
 class FacultyStaffView(HasFacultyMixin, TemplateView):
@@ -67,38 +68,63 @@ class FacultyStaffView(HasFacultyMixin, TemplateView):
         if not hasattr(user, 'faculty') or not user.faculty:
             return context
 
-        # Получаем параметры фильтрации
         department_id = self.request.GET.get('department')
         duty_id = self.request.GET.get('duty')
 
-        # Базовая выборка — все сотрудники факультета
-        staff = People.objects.filter(department__faculty=user.faculty).select_related('department', 'rank')
+        from django.db.models import Q, Case, When, Value, BooleanField
 
-        # Фильтр по кафедре
+        # === Список всех сотрудников: кафедры + управление ===
+        staff = People.objects.filter(
+            Q(department__faculty=user.faculty) | 
+            Q(faculty=user.faculty, department__isnull=True)
+        ).annotate(
+            is_management=Case(
+                When(department__isnull=True, then=Value(True)),
+                default=Value(False),
+                output_field=BooleanField()
+            )
+        ).select_related('department', 'rank').order_by('full_name')
+
+        # === Наряды для выпадающего списка ===
+        filtered_duties = Duty.objects.filter(
+            Q(is_commandant=True) |
+            Q(faculty=user.faculty, department__isnull=True)
+        ).distinct()
+
+        # === Кафедры для фильтра ===
         departments = Department.objects.filter(faculty=user.faculty)
-        if department_id:
+
+        # === Фильтрация по кафедре или наряду ===
+        if department_id == 'management':
+            staff = staff.filter(department__isnull=True)
+        elif department_id:
             staff = staff.filter(department_id=department_id)
 
-        # Фильтр по допуску к наряду
         if duty_id:
             staff = staff.filter(department_duty_permissions__duty_id=duty_id)
 
-        staff = staff.distinct()
-
-        # Формируем данные для таблицы
         today = timezone.now().date()
         table_items = []
 
+        today = timezone.now().date()
+
         for idx, person in enumerate(staff, start=1):
-            missing = DepartmentMissing.objects.filter(
-                person=person,
-                start_date__lte=today,
-                end_date__gte=today
-            ).first()
+            missing = None
+
+            if person.department:
+                missing = DepartmentMissing.objects.filter(
+                    person=person,
+                ).first()
+            else:
+                missing = FacultyMissing.objects.filter(
+                    person=person,
+                ).first()
 
             missing_info = '-'
             if missing:
-                missing_info = f"{missing.get_reason_display()} ({missing.start_date.strftime('%d.%m')} – {missing.end_date.strftime('%d.%m')})"
+                missing_info = f"{missing.start_date.strftime('%d.%m.%Y')} – {missing.end_date.strftime('%d.%m.%Y')}"
+
+            dept_name = str(person.department) if person.department else 'Управление'
 
             table_items.append({
                 'url': reverse('faculty:staff_detail', args=[person.pk]),
@@ -106,7 +132,7 @@ class FacultyStaffView(HasFacultyMixin, TemplateView):
                     {'value': idx},
                     {'value': person.full_name},
                     {'value': str(person.rank) if person.rank else '-'},
-                    {'value': str(person.department)},
+                    {'value': dept_name},
                     {'value': missing_info}
                 ]
             })
@@ -115,7 +141,7 @@ class FacultyStaffView(HasFacultyMixin, TemplateView):
             {'label': '#'},
             {'label': 'ФИО'},
             {'label': 'Звание'},
-            {'label': 'Кафедра'},
+            {'label': 'Подразделение'},
             {'label': 'Освобождение'}
         ]
 
@@ -124,7 +150,7 @@ class FacultyStaffView(HasFacultyMixin, TemplateView):
             'headers': headers,
             'table_items': table_items,
             'departments': departments,
-            'duties': Duty.objects.all(),
+            'duties': filtered_duties,
             'selected_department': department_id,
             'selected_duty': duty_id,
             'total_people': len(table_items),

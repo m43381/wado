@@ -15,19 +15,18 @@
         </thead>
 
         <tbody>
+            <!-- components/table.html -->
             {% for item in items %}
             <tr class="clickable-row" data-url="{{ item.url }}">
                 {% for field in item.fields %}
                 <td {% if field.class %}class="{{ field.class }}"{% endif %}>
-                    {{ field.value|safe }}
+                    {% if field.value is not None and field.value != '-' %}
+                        {{ field.value|safe }}
+                    {% else %}
+                        <span>—</span> {# или просто "-" без стиля #}
+                    {% endif %}
                 </td>
                 {% endfor %}
-            </tr>
-            {% empty %}
-            <tr>
-                <td colspan="{{ headers|length }}" class="text-center">
-                    Нет данных
-                </td>
             </tr>
             {% endfor %}
         </tbody>

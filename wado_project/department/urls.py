@@ -10,4 +10,5 @@ urlpatterns = [
     path('people/', include('people.urls', namespace='people')),
     path('missing/', include('missing.urls', namespace='missing')),
     path('permission/', include('permission.urls', namespace='permission')),
+    path('duty/', include(('duty.urls_department', 'department_duty'), namespace='duty')),
 ]

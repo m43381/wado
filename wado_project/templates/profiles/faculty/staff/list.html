@@ -22,6 +22,13 @@
                     <label for="department">Подразделение</label>
                     <select name="department" id="department" class="form-control">
                         <option value="">Все Подразделения</option>
+
+                        <!-- Пункт "Управление" -->
+                        <option value="management" {% if selected_department == 'management' %}selected{% endif %}>
+                            Управление
+                        </option>
+
+                        <!-- Кафедры -->
                         {% for dept in departments %}
                         <option value="{{ dept.id }}" {% if dept.id|str_equal:selected_department %}selected{% endif %}>
                             {{ dept.name }}
@@ -55,7 +62,7 @@
         <p><strong>Всего: {{ total_people }}</strong></p>
         {% include "components/table.html" with headers=headers items=table_items class="staff-table" %}
     {% else %}
-    <div class="empty-message">
+    <div class="empty-message"> 
         <p>Сотрудников не найдено</p>
     </div>
     {% endif %}

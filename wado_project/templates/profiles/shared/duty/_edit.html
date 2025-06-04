@@ -1,0 +1,19 @@
+<!-- templates/profiles/shared/duty/_edit.html -->
+
+{% extends "pages/generic_form.html" %}
+{% block title %}Редактировать наряд "{{ object.duty_name }}"{% endblock %}
+{% block icon %}edit{% endblock %}
+
+{% block form_body %}
+    {{ form_body|safe }}
+{% endblock %}
+
+{% block form_actions %}
+    {{ block.super }}
+
+    {% if delete_url %}
+    <a href="{{ delete_url }}" class="btn btn-danger">
+        <i class="fas fa-trash"></i> Удалить
+    </a>
+    {% endif %}
+{% endblock %}

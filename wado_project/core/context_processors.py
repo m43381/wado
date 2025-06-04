@@ -22,7 +22,8 @@ def sidebar_menu(request):
             {'name': 'Л/с факультета', 'url_name': 'faculty:staff'},
             {'name': 'Л/с управления факультета', 'url_name': 'faculty:people:faculty_staff'},
             {'name': 'Допуски к нарядам', 'url_name': 'faculty:permission:faculty_list'},
-            {'name': 'Освобождения', 'url_name': 'faculty:missing:faculty_list'},  # ← Новая строка
+            {'name': 'Освобождения', 'url_name': 'faculty:missing:faculty_list'},
+            {'name': 'Наряды', 'url_name': 'faculty:duty:list'},
             {'name': 'Уведомления', 'url_name': 'notifications:list'},
         ]
     elif user_type == 'department':
@@ -31,9 +32,11 @@ def sidebar_menu(request):
             {'name': 'Личный состав', 'url_name': 'department:people:staff'},
             {'name': 'Освобождения', 'url_name': 'department:missing:department_list'},
             {'name': 'Допуски', 'url_name': 'department:permission:department_list'},
+            {'name': 'Наряды', 'url_name': 'department:duty:list'},
             {'name': 'Уведомления', 'url_name': 'notifications:list'},
         ]
 
+    # Добавляем URL и проверку активности
     for item in menu_items:
         try:
             item['url'] = reverse(item['url_name'])
