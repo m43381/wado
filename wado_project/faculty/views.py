@@ -101,7 +101,10 @@ class FacultyStaffView(HasFacultyMixin, TemplateView):
             staff = staff.filter(department_id=department_id)
 
         if duty_id:
-            staff = staff.filter(department_duty_permissions__duty_id=duty_id)
+            staff = staff.filter(
+                Q(department_duty_permissions__duty_id=duty_id) |
+                Q(faculty_duty_permissions__duty_id=duty_id)
+            ).distinct()
 
         today = timezone.now().date()
         table_items = []

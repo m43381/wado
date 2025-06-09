@@ -17,9 +17,9 @@
         <h1>
             Допуски к нарядам 
             {% if related_type == 'department' %}
-                кафедры {{ object_name }}
+                {{ object_name }} кафедры 
             {% elif related_type == 'faculty' %}
-                факультета {{ object_name }}
+                управления {{ object_name }} факультета 
             {% else %}
                 {{ related_type_label }}
             {% endif %}

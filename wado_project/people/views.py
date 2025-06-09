@@ -6,73 +6,75 @@ from django.views.generic import (
     UpdateView,
     DeleteView,
 )
-from django.urls import reverse_lazy, reverse
+from django.urls import reverse, reverse_lazy
 from django.utils.safestring import mark_safe
 from django.template.loader import render_to_string
 from django.contrib.messages.views import SuccessMessageMixin
 from django.utils import timezone
+from django.core.exceptions import PermissionDenied
 
 from .models import People
 from .forms import PeopleForm
 
-from core.mixins import (
-    LoginRequiredMixin,
-    HasFacultyMixin,
-    HasDepartmentMixin,
-)
-
+from core.mixins import LoginRequiredMixin
 from missing.models import DepartmentMissing
 
 
 class BasePeopleView:
     """
-    Базовый класс с общей логикой для кафедры и факультета
+    Базовый класс для работы с сотрудниками.
+    Автоматически определяет уровень доступа: кафедра или факультет.
     """
     model = People
     form_class = PeopleForm
     template_name_prefix = 'profiles/shared/people/'
-    namespace = None  # department / faculty
-    related_field = None  # department / faculty
 
     def get_template_names(self):
         return [f"{self.template_name_prefix}{self.template_name_suffix}.html"]
 
+    def get_related_type(self):
+        """Определяет, от имени какого подразделения действует пользователь"""
+        if self.request.user.department:
+            return 'department'
+        elif self.request.user.faculty:
+            return 'faculty'
+        raise PermissionDenied("У вас нет прав для управления сотрудниками")
+
     def get_queryset(self):
-        if self.related_field == 'department':
+        related_type = self.get_related_type()
+        if related_type == 'department':
             return People.objects.filter(department=self.request.user.department)
-        elif self.related_field == 'faculty':
+        elif related_type == 'faculty':
             return People.objects.filter(faculty=self.request.user.faculty, department__isnull=True)
         return super().get_queryset()
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
-        # Приоритет: сначала кафедра, потом факультет
+        related_type = self.get_related_type()
         object_name = ''
-        if self.request.user.department:
+        if related_type == 'department':
             object_name = self.request.user.department.name
-        elif self.request.user.faculty:
+        else:
             object_name = self.request.user.faculty.name
 
         context.update({
-            'namespace': self.namespace,
-            'related_type': self.related_field,
+            'related_type': related_type,
             'object_name': object_name,
         })
 
         return context
 
     def form_valid(self, form):
-        if self.related_field == 'department':
+        related_type = self.get_related_type()
+        if related_type == 'department':
             form.instance.department = self.request.user.department
             form.instance.faculty = self.request.user.faculty
-        elif self.related_field == 'faculty':
+        elif related_type == 'faculty':
             form.instance.faculty = self.request.user.faculty
             form.instance.department = None
         return super().form_valid(form)
 
-
-# people/views.py
 
 class PeopleListView(BasePeopleView, ListView):
     context_object_name = 'staff'
@@ -81,17 +83,12 @@ class PeopleListView(BasePeopleView, ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
-        # URL для добавления
-        if self.related_field == 'department':
-            context['add_url'] = reverse(f'{self.namespace}:people:add')
-        elif self.related_field == 'faculty':
-            context['add_url'] = reverse(f'{self.namespace}:people:faculty_add')
+        # Получаем текущий namespace (например, 'faculty:people')
+        current_namespace = self.request.resolver_match.namespace
 
-        # Подпись: кафедры / факультета
-        context['related_type_label'] = {
-            'department': 'кафедры',
-            'faculty': 'факультета'
-        }.get(self.related_field, '')
+        related_type = self.get_related_type()
+        context['add_url'] = reverse(f'{current_namespace}:add')
+        context['related_type_label'] = 'кафедры' if related_type == 'department' else 'факультета'
 
         headers = [
             {'label': '#'},
@@ -114,11 +111,7 @@ class PeopleListView(BasePeopleView, ListView):
             if missing:
                 missing_info = f"{missing.get_reason_display()} ({missing.start_date.strftime('%d.%m')} – {missing.end_date.strftime('%d.%m')})"
 
-            # Формируем URL редактирования
-            if self.related_field == 'department':
-                edit_url = reverse(f'{self.namespace}:people:edit', args=[person.pk])
-            elif self.related_field == 'faculty':
-                edit_url = reverse(f'{self.namespace}:people:faculty_edit', args=[person.pk])
+            edit_url = reverse(f'{current_namespace}:edit', args=[person.pk])
 
             table_items.append({
                 'url': edit_url,
@@ -142,13 +135,10 @@ class PeopleListView(BasePeopleView, ListView):
 class PeopleCreateView(BasePeopleView, LoginRequiredMixin, SuccessMessageMixin, CreateView):
     template_name_suffix = '_add'
     success_message = 'Сотрудник успешно добавлен'
-    error_message = 'Ошибка при добавлении сотрудника'
 
     def get_success_url(self):
-        if self.related_field == 'department':
-            return reverse(f'{self.namespace}:people:staff')
-        elif self.related_field == 'faculty':
-            return reverse(f'{self.namespace}:people:faculty_staff')
+        current_namespace = self.request.resolver_match.namespace
+        return reverse(f'{current_namespace}:staff')
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -179,13 +169,10 @@ class PeopleCreateView(BasePeopleView, LoginRequiredMixin, SuccessMessageMixin, 
 class PeopleUpdateView(BasePeopleView, LoginRequiredMixin, SuccessMessageMixin, UpdateView):
     template_name_suffix = '_edit'
     success_message = 'Данные сотрудника обновлены'
-    error_message = 'Ошибка при редактировании данных'
 
     def get_success_url(self):
-        if self.related_field == 'department':
-            return reverse(f'{self.namespace}:people:staff')
-        elif self.related_field == 'faculty':
-            return reverse(f'{self.namespace}:people:faculty_staff')
+        current_namespace = self.request.resolver_match.namespace
+        return reverse(f'{current_namespace}:staff')
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -204,11 +191,7 @@ class PeopleUpdateView(BasePeopleView, LoginRequiredMixin, SuccessMessageMixin, 
         }, request=self.request)
         form_parts.append(row_html)
 
-        delete_url = ''
-        if self.related_field == 'department':
-            delete_url = reverse(f'{self.namespace}:people:delete', args=[self.object.pk])
-        elif self.related_field == 'faculty':
-            delete_url = reverse(f'{self.namespace}:people:faculty_delete', args=[self.object.pk])
+        delete_url = reverse(f"{self.request.resolver_match.namespace}:delete", args=[self.object.pk])
 
         context.update({
             'form_body': mark_safe('\n'.join(form_parts)),
@@ -221,58 +204,14 @@ class PeopleUpdateView(BasePeopleView, LoginRequiredMixin, SuccessMessageMixin, 
 
 class PeopleDeleteView(LoginRequiredMixin, SuccessMessageMixin, DeleteView):
     model = People
-    context_object_name = 'object'
-    template_name = 'profiles/shared/people/confirm_delete.html'
+    template_name = 'profiles/shared/people/_confirm_delete.html'
+    success_message = 'Сотрудник успешно удалён'
 
     def get_success_url(self):
-        if self.related_field == 'department':
-            return reverse(f'{self.namespace}:people:staff')
-        elif self.related_field == 'faculty':
-            return reverse(f'{self.namespace}:people:faculty_staff')
+        current_namespace = self.request.resolver_match.namespace
+        return reverse(f'{current_namespace}:staff')
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['cancel_url'] = self.get_success_url()
         return context
-
-
-# === Для кафедры ===
-class DepartmentPeopleListView(PeopleListView):
-    namespace = 'department'
-    related_field = 'department'
-
-
-class DepartmentPeopleCreateView(PeopleCreateView):
-    namespace = 'department'
-    related_field = 'department'
-
-
-class DepartmentPeopleUpdateView(PeopleUpdateView):
-    namespace = 'department'
-    related_field = 'department'
-
-
-class DepartmentPeopleDeleteView(PeopleDeleteView):
-    namespace = 'department'
-    related_field = 'department'
-
-
-# === Для факультета ===
-class FacultyPeopleListView(PeopleListView):
-    namespace = 'faculty'
-    related_field = 'faculty'
-
-
-class FacultyPeopleCreateView(PeopleCreateView):
-    namespace = 'faculty'
-    related_field = 'faculty'
-
-
-class FacultyPeopleUpdateView(PeopleUpdateView):
-    namespace = 'faculty'
-    related_field = 'faculty'
-
-
-class FacultyPeopleDeleteView(PeopleDeleteView):
-    namespace = 'faculty'
-    related_field = 'faculty'

@@ -82,6 +82,7 @@ class PermissionListView(BasePermissionView, ListView):
             })
 
         add_url = reverse(f'{self.namespace}:people:add')  # убедись, что такой маршрут есть
+        print(self.namespace)
 
         context.update({
             'staff_list': staff_list,
@@ -122,13 +123,41 @@ class BasePersonPermissionEditView(SuccessMessageMixin, UpdateView):
                 person=person
             ).values_list('duty_id', flat=True))
 
+        # Определяем нужные фильтры
+        duty_queryset = Duty.objects.none()  # Начинаем с пустого queryset'а
+        from django.db.models import Q
+
+        if self.related_field == 'department':
+            department = self.request.user.department
+            faculty = department.faculty
+
+            duty_queryset = Duty.objects.filter(
+                Q(department=department) |  # Кафедральные наряды
+                Q(faculty=faculty, department__isnull=True) |  # Факультетские (без кафедры)
+                Q(is_commandant=True)  # Комендантские
+            )
+
+        elif self.related_field == 'faculty':
+            faculty = self.request.user.faculty
+
+            duty_queryset = Duty.objects.filter(
+                Q(faculty=faculty, department__isnull=True) |  # Факультетские (без кафедры)
+                Q(is_commandant=True)  # Комендантские
+            )
+
+        # Формируем список чекбоксов
         duty_checkboxes = []
-        for duty in Duty.objects.all():
+        for duty in duty_queryset.distinct():
             duty_checkboxes.append({
                 'id': duty.id,
                 'name': duty.duty_name,
                 'checked': 'checked' if duty.id in current_permissions else '',
                 'weight': duty.duty_weight,
+                'source': 'комендантский' if duty.is_commandant else (
+                    'факультетский' if duty.faculty and not duty.department else (
+                        'кафедральный' if duty.department else ''
+                    )
+                )
             })
 
         context.update({
@@ -139,7 +168,6 @@ class BasePersonPermissionEditView(SuccessMessageMixin, UpdateView):
             'cancel_url': self.get_success_url(),
         })
         return context
-
 
 # === Для кафедры ===
 class DepartmentPermissionListView(HasDepartmentMixin, PermissionListView):

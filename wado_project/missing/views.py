@@ -1,7 +1,7 @@
 # missing/views.py
 
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView
-from django.urls import reverse
+from django.urls import reverse, reverse_lazy
 from django.utils.safestring import mark_safe
 from django.template.loader import render_to_string
 from django.utils import timezone
@@ -224,9 +224,14 @@ class BaseMissingDeleteView(BaseMissingView, DeleteView):
     def get(self, request, *args, **kwargs):
         """Обрабатываем GET-запрос, чтобы показать подтверждение"""
         return super().get(request, *args, **kwargs)
-
+    
     def get_success_url(self):
-        return reverse(f'{self.namespace}:missing:{self.related_field}_list')
+        return reverse_lazy(f'{self.namespace}:missing:{self.related_field}_list')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['cancel_url'] = self.get_success_url()
+        return context
 
 
 # === Для кафедры ===

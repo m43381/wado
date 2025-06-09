@@ -42,16 +42,20 @@ class CommandantStaffListView(IsCommandantMixin, TemplateView):
         unit_id = self.request.GET.get('unit')  # может быть id факультета или кафедры
         duty_id = self.request.GET.get('duty')
 
-        # Формируем список доступных подразделений: факультеты + кафедры без факультета
+        # Формируем список доступных подразделений:
+        # - только факультеты
+        # - и кафедры БЕЗ факультета
         faculties = Faculty.objects.annotate(
             staff_count=Count('departments__people')
         ).order_by('name')
 
-        departments_without_faculty = Department.objects.filter(
-            faculty__isnull=True
-        ).annotate(staff_count=Count('people')).order_by('name')
+        departments_without_faculty = Department.objects.filter(faculty__isnull=True).annotate(
+            staff_count=Count('people')
+        ).order_by('name')
 
         units = []
+
+        # Добавляем факультеты с постфиксом "(факультет)"
         for f in faculties:
             unit_entry = {
                 'type': 'faculty',
@@ -62,6 +66,7 @@ class CommandantStaffListView(IsCommandantMixin, TemplateView):
             }
             units.append(unit_entry)
 
+        # Добавляем кафедры без факультета с постфиксом "(кафедра)"
         for d in departments_without_faculty:
             unit_entry = {
                 'type': 'department',
@@ -75,11 +80,17 @@ class CommandantStaffListView(IsCommandantMixin, TemplateView):
         # Базовая выборка
         staff = People.objects.select_related('department', 'rank')
 
-        # Определяем, что выбрано: факультет или кафедра
+        # Определяем, что выбрано: факультет или кафедра без факультета
         if unit_id:
             if unit_id.startswith('id_f_'):
                 faculty_id = int(unit_id.replace('id_f_', ''))
-                staff = staff.filter(department__faculty_id=faculty_id)
+                # Выводим сотрудников:
+                # 1. всех кафедр этого факультета
+                # 2. людей, прикреплённых к этому факультету, но без кафедры
+                staff = staff.filter(department__faculty_id=faculty_id) | staff.filter(
+                    faculty_id=faculty_id, department__isnull=True
+                )
+
             elif unit_id.startswith('id_d_'):
                 department_id = int(unit_id.replace('id_d_', ''))
                 staff = staff.filter(department_id=department_id)
@@ -103,13 +114,17 @@ class CommandantStaffListView(IsCommandantMixin, TemplateView):
             if missing:
                 missing_info = f"{missing.get_reason_display()} ({missing.start_date.strftime('%d.%m')} – {missing.end_date.strftime('%d.%m')})"
 
+            dept_name = str(person.department) if person.department else (
+                f'Управление факультета {person.faculty}' if person.faculty else '-'
+            )
+
             table_items.append({
-                'url': reverse('commandant:staff_detail', args=[person.pk]),  # ← Добавлено!
+                'url': reverse('commandant:staff_detail', args=[person.pk]),
                 'fields': [
                     {'value': idx},
                     {'value': person.full_name},
                     {'value': str(person.rank) if person.rank else '-'},
-                    {'value': str(person.department) if person.department else '-'},
+                    {'value': dept_name},
                     {'value': missing_info}
                 ]
             })
@@ -126,7 +141,7 @@ class CommandantStaffListView(IsCommandantMixin, TemplateView):
             'headers': headers,
             'table_items': table_items,
             'units': units,
-            'duties': Duty.objects.all(),
+            'duties': Duty.objects.filter(is_commandant=True),
             'selected_unit': unit_id,
             'selected_duty': duty_id,
             'total_people': len(table_items),

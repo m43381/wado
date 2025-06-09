@@ -20,7 +20,7 @@ def sidebar_menu(request):
         menu_items = [
             {'name': 'Профиль факультета', 'url_name': 'faculty:profile'},
             {'name': 'Л/с факультета', 'url_name': 'faculty:staff'},
-            {'name': 'Л/с управления факультета', 'url_name': 'faculty:people:faculty_staff'},
+            {'name': 'Л/с управления факультета', 'url_name': 'faculty:people:staff'},
             {'name': 'Допуски к нарядам', 'url_name': 'faculty:permission:faculty_list'},
             {'name': 'Освобождения', 'url_name': 'faculty:missing:faculty_list'},
             {'name': 'Наряды', 'url_name': 'faculty:duty:list'},
