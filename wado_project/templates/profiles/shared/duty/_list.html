@@ -29,7 +29,6 @@
         </a>
     </div>
 
-
     {% if duties %}
     <div class="table-responsive">
         <table class="staff-table">
@@ -37,6 +36,8 @@
                 <tr>
                     <th>Название</th>
                     <th>Вес</th>
+                    <th>Кол-во людей</th>
+                    <th>Закрепление</th>
                 </tr>
             </thead>
             <tbody>
@@ -44,6 +45,16 @@
                 <tr onclick="window.location='{{ duty.get_edit_url }}';" style="cursor: pointer;">
                     <td>{{ duty.duty_name }}</td>
                     <td>{{ duty.duty_weight }}</td>
+                    <td>{{ duty.people_count }}</td>
+                    <td>
+                        {% if duty.assigned_faculty %}
+                            Факультет: {{ duty.assigned_faculty.name }}
+                        {% elif duty.assigned_department %}
+                            Кафедра: {{ duty.assigned_department.name }}
+                        {% else %}
+                            —
+                        {% endif %}
+                    </td>
                 </tr>
                 {% endfor %}
             </tbody>

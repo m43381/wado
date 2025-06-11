@@ -1,0 +1,29 @@
+<!-- templates/components/duty_form_scripts.html -->
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const assignedType = document.querySelector('#id_assigned_type');
+    const facultyField = document.getElementById('assigned-faculty-field');
+    const departmentField = document.getElementById('assigned-department-field');
+
+    function toggleFields() {
+        if (assignedType) {
+            const selected = assignedType.value;
+            if (selected === 'faculty') {
+                facultyField.style.display = 'block';
+                departmentField.style.display = 'none';
+            } else if (selected === 'department') {
+                departmentField.style.display = 'block';
+                facultyField.style.display = 'none';
+            } else {
+                facultyField.style.display = 'none';
+                departmentField.style.display = 'none';
+            }
+        }
+    }
+
+    if (assignedType) {
+        toggleFields(); // Вызвать при загрузке
+        assignedType.addEventListener('change', toggleFields);
+    }
+});
+</script>

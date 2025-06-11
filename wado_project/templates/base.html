@@ -32,6 +32,9 @@
         
         {% include "includes/footer.html" %}
     </div>
+    {% block extra_script %}
+    {% endblock %}
+
     <script src="{% static 'js/table.js' %}"></script>
 </body>
 </html>

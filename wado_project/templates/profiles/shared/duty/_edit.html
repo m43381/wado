@@ -6,6 +6,42 @@
 
 {% block form_body %}
     {{ form_body|safe }}
+
+    <div class="row">
+        <div class="col-md-6">
+            {{ form.assigned_type.label_tag }}
+            {{ form.assigned_type }}
+            {% for error in form.assigned_type.errors %}
+                <div class="invalid-feedback d-block">{{ error }}</div>
+            {% endfor %}
+        </div>
+
+        <div class="col-md-6" id="assigned-faculty-field" {% if form.assigned_type.value != 'faculty' %}style="display: none;"{% endif %}>
+            {{ form.assigned_faculty.label_tag }}
+            {{ form.assigned_faculty }}
+            {% for error in form.assigned_faculty.errors %}
+                <div class="invalid-feedback d-block">{{ error }}</div>
+            {% endfor %}
+        </div>
+
+        <div class="col-md-6" id="assigned-department-field" {% if form.assigned_type.value != 'department' %}style="display: none;"{% endif %}>
+            {{ form.assigned_department.label_tag }}
+            {{ form.assigned_department }}
+            {% for error in form.assigned_department.errors %}
+                <div class="invalid-feedback d-block">{{ error }}</div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-6">
+            {{ form.people_count.label_tag }}
+            {{ form.people_count }}
+            {% for error in form.people_count.errors %}
+                <div class="invalid-feedback d-block">{{ error }}</div>
+            {% endfor %}
+        </div>
+    </div>
 {% endblock %}
 
 {% block form_actions %}
