@@ -1,9 +1,8 @@
-# duty/forms.py
-
 from django import forms
 from .models import Duty
 from unit.models import Faculty, Department
 from django.core.exceptions import ValidationError
+from datetime import datetime
 
 
 class DutyForm(forms.ModelForm):
@@ -105,3 +104,92 @@ class DutyForm(forms.ModelForm):
         if commit:
             duty.save()
         return duty
+
+
+class MonthlyPlanForm(forms.Form):
+    month = forms.DateField(
+        label='Месяц планирования',
+        widget=forms.DateInput(attrs={'type': 'month', 'class': 'form-control'}),
+        input_formats=['%Y-%m']
+    )
+    
+    duties = forms.ModelMultipleChoiceField(
+        queryset=Duty.objects.filter(is_commandant=True),
+        label='Наряды для планирования',
+        widget=forms.CheckboxSelectMultiple,
+        required=True
+    )
+
+
+class DutyScheduleSettingsForm(forms.Form):
+    schedule_type = forms.ChoiceField(
+        label='Тип расписания',
+        choices=[
+            ('all', 'Весь месяц'),
+            ('range', 'Диапазон дат'),
+            ('specific', 'Конкретные дни'),
+            ('weekdays', 'Дни недели')
+        ],
+        initial='all',
+        widget=forms.RadioSelect(attrs={'class': 'schedule-type-radio'})
+    )
+    
+    start_date = forms.DateField(
+        label='Начальная дата',
+        required=False,
+        widget=forms.DateInput(attrs={'type': 'date', 'class': 'form-control'})
+    )
+    
+    end_date = forms.DateField(
+        label='Конечная дата',
+        required=False,
+        widget=forms.DateInput(attrs={'type': 'date', 'class': 'form-control'})
+    )
+    
+    specific_dates = forms.CharField(
+        label='Конкретные даты',
+        required=False,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'дд.мм.гггг, дд.мм.гггг...'
+        })
+    )
+    
+    weekdays = forms.MultipleChoiceField(
+        choices=[
+            ('Понедельник', 'Понедельник'),
+            ('Вторник', 'Вторник'),
+            ('Среда', 'Среда'),
+            ('Четверг', 'Четверг'),
+            ('Пятница', 'Пятница'),
+            ('Суббота', 'Суббота'),
+            ('Воскресенье', 'Воскресенье'),
+        ],
+        widget=forms.CheckboxSelectMultiple,
+        required=False,
+        label='Дни недели'
+    )
+
+    def clean(self):
+        cleaned_data = super().clean()
+        schedule_type = cleaned_data.get('schedule_type')
+        
+        if schedule_type == 'range':
+            start_date = cleaned_data.get('start_date')
+            end_date = cleaned_data.get('end_date')
+            if not start_date or not end_date:
+                raise ValidationError('Для диапазона дат укажите начальную и конечную дату')
+            if start_date > end_date:
+                raise ValidationError('Начальная дата не может быть больше конечной')
+                
+        elif schedule_type == 'specific':
+            specific_dates = cleaned_data.get('specific_dates')
+            if not specific_dates:
+                raise ValidationError('Укажите конкретные даты')
+                
+        elif schedule_type == 'weekdays':
+            weekdays = cleaned_data.get('weekdays')
+            if not weekdays:
+                raise ValidationError('Выберите хотя бы один день недели')
+        
+        return cleaned_data

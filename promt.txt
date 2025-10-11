@@ -1,0 +1,1431 @@
+from django.db import models
+from unit.models import Faculty, Department
+from django.urls import reverse
+from django.db.models import Q
+
+
+class Duty(models.Model):
+    duty_name = models.CharField('Название наряда', max_length=50)
+    duty_weight = models.FloatField('Вес наряда')
+    is_commandant = models.BooleanField('Добавлено комендантом', default=False)
+
+    faculty = models.ForeignKey(
+        Faculty,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        verbose_name='Факультет',
+        related_name='duties'
+    )
+    department = models.ForeignKey(
+        Department,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        verbose_name='Кафедра',
+        related_name='duties'
+    )
+
+    # Новые поля:
+    people_count = models.PositiveIntegerField('Количество людей', default=1)
+    
+    assigned_faculty = models.ForeignKey(
+        Faculty,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        verbose_name='Закреплённый факультет',
+        related_name='assigned_duties_as_faculty'
+    )
+    assigned_department = models.ForeignKey(
+        Department,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        verbose_name='Закреплённая кафедра',
+        related_name='assigned_duties_as_department'
+    )
+
+    def __str__(self):
+        return self.duty_name
+
+    def get_edit_url(self):
+        if self.is_commandant:
+            return reverse('commandant:duty:edit', args=[self.pk])
+        elif self.faculty and not self.department:
+            return reverse('faculty:duty:edit', args=[self.pk])
+        elif self.department:
+            return reverse('department:duty:edit', args=[self.pk])
+
+
+    def get_assigned_unit_display(self):
+        if self.assigned_faculty:
+            return f"Факультет: {self.assigned_faculty.name}"
+        elif self.assigned_department:
+            return f"Кафедра: {self.assigned_department.name}"
+        return "Нет закрепления"
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['duty_name'],
+                name='unique_duty_for_commandant',
+                condition=Q(is_commandant=True)
+            ),
+            models.UniqueConstraint(
+                fields=['duty_name', 'faculty'],
+                name='unique_duty_for_faculty',
+                condition=Q(faculty__isnull=False, department__isnull=True, is_commandant=False)
+            ),
+            models.UniqueConstraint(
+                fields=['duty_name', 'department'],
+                name='unique_duty_for_department',
+                condition=Q(department__isnull=False)
+            ),
+        ]
+
+from django.db import models
+from unit.models import Faculty, Department
+from rank.models import Rank
+
+
+class People(models.Model):
+    full_name = models.CharField('ФИО', max_length=100)
+    faculty = models.ForeignKey(
+        Faculty,
+        verbose_name='Факультет',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True
+    )
+    department = models.ForeignKey(
+        Department,
+        verbose_name='Кафедра',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True
+    )
+    rank = models.ForeignKey(
+        Rank,
+        verbose_name='Звание',
+        on_delete=models.PROTECT
+    )
+    last_duty_date = models.DateField(
+        'Дата последнего наряда',
+        null=True,
+        blank=True
+    )
+    workload = models.FloatField(
+        'Нагрузка',
+        default=0.0
+    )
+
+    class Meta:
+        verbose_name = 'Человек'
+        verbose_name_plural = 'Люди'
+        ordering = ['full_name']
+
+    def __str__(self):
+        return self.full_name
+
+# commandant/urls.py
+
+from django.urls import path, include
+from . import views
+
+app_name = 'commandant'
+
+urlpatterns = [
+    path('profile/', views.CommandantDashboardView.as_view(), name='profile'),
+    path('duty/', include(('duty.urls_commandant', 'commandant_duty'), namespace='duty')),
+    path('staff/', views.CommandantStaffListView.as_view(), name='staff'),
+    path('staff/<int:pk>/', views.CommandantStaffDetailView.as_view(), name='staff_detail'),
+]
+
+from django.contrib import admin
+from django.urls import path, include
+from django.contrib.auth import views as auth_views
+from . import views
+
+urlpatterns = [
+    path('admin/', admin.site.urls),
+    path('notifications/', include('notifications.urls')),
+    path('authentication/', include('authentication.urls')),
+    path('department/', include('department.urls')),
+    path('commandant/', include('commandant.urls')),
+    path('faculty/', include('faculty.urls')),
+    path('', views.homepage, name='home'),
+]
+
+# profiles/commandant/views.py
+
+from django.views.generic import TemplateView
+from core.mixins import IsCommandantMixin
+
+
+class CommandantDashboardView(IsCommandantMixin, TemplateView):
+    template_name = 'profiles/commandant/dashboard.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        user = self.request.user
+
+        # Базовый контекст
+        context.update({
+            'user': user,
+        })
+
+        return context
+    
+# profiles/commandant/views.py
+
+from django.views.generic import TemplateView
+from people.models import People
+from unit.models import Faculty, Department
+from duty.models import Duty
+from missing.models import DepartmentMissing
+from permission.models import DepartmentDutyPermission
+from core.mixins import IsCommandantMixin
+from django.utils import timezone
+from django.urls import reverse
+from django.db.models import Count
+
+
+class CommandantStaffListView(IsCommandantMixin, TemplateView):
+    template_name = 'profiles/commandant/staff/list.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        # Получаем параметры фильтрации
+        unit_id = self.request.GET.get('unit')  # может быть id факультета или кафедры
+        duty_id = self.request.GET.get('duty')
+
+        # Формируем список доступных подразделений:
+        # - только факультеты
+        # - и кафедры БЕЗ факультета
+        faculties = Faculty.objects.annotate(
+            staff_count=Count('departments__people')
+        ).order_by('name')
+
+        departments_without_faculty = Department.objects.filter(faculty__isnull=True).annotate(
+            staff_count=Count('people')
+        ).order_by('name')
+
+        units = []
+
+        # Добавляем факультеты с постфиксом "(факультет)"
+        for f in faculties:
+            unit_entry = {
+                'type': 'faculty',
+                'id': f'id_f_{f.id}',
+                'name': f'{f.name} факультет',
+                'staff_count': f.staff_count,
+                'is_selected': f'id_f_{f.id}' == unit_id,
+            }
+            units.append(unit_entry)
+
+        # Добавляем кафедры без факультета с постфиксом "(кафедра)"
+        for d in departments_without_faculty:
+            unit_entry = {
+                'type': 'department',
+                'id': f'id_d_{d.id}',
+                'name': f'{d.name} кафедра',
+                'staff_count': d.staff_count,
+                'is_selected': f'id_d_{d.id}' == unit_id,
+            }
+            units.append(unit_entry)
+
+        # Базовая выборка
+        staff = People.objects.select_related('department', 'rank')
+
+        # Определяем, что выбрано: факультет или кафедра без факультета
+        if unit_id:
+            if unit_id.startswith('id_f_'):
+                faculty_id = int(unit_id.replace('id_f_', ''))
+                # Выводим сотрудников:
+                # 1. всех кафедр этого факультета
+                # 2. людей, прикреплённых к этому факультету, но без кафедры
+                staff = staff.filter(department__faculty_id=faculty_id) | staff.filter(
+                    faculty_id=faculty_id, department__isnull=True
+                )
+
+            elif unit_id.startswith('id_d_'):
+                department_id = int(unit_id.replace('id_d_', ''))
+                staff = staff.filter(department_id=department_id)
+
+        # Фильтр по допуску к наряду
+        if duty_id:
+            staff = staff.filter(department_duty_permissions__duty_id=duty_id).distinct()
+
+        # Формируем данные для таблицы
+        today = timezone.now().date()
+        table_items = []
+
+        for idx, person in enumerate(staff, start=1):
+            missing = DepartmentMissing.objects.filter(
+                person=person,
+                start_date__lte=today,
+                end_date__gte=today
+            ).first()
+
+            missing_info = '-'
+            if missing:
+                missing_info = f"{missing.get_reason_display()} ({missing.start_date.strftime('%d.%m')} – {missing.end_date.strftime('%d.%m')})"
+
+            dept_name = str(person.department) if person.department else (
+                f'Управление факультета {person.faculty}' if person.faculty else '-'
+            )
+
+            table_items.append({
+                'url': reverse('commandant:staff_detail', args=[person.pk]),
+                'fields': [
+                    {'value': idx},
+                    {'value': person.full_name},
+                    {'value': str(person.rank) if person.rank else '-'},
+                    {'value': dept_name},
+                    {'value': missing_info}
+                ]
+            })
+
+        headers = [
+            {'label': '#'},
+            {'label': 'ФИО'},
+            {'label': 'Звание'},
+            {'label': 'Кафедра'},
+            {'label': 'Освобождение'}
+        ]
+
+        context.update({
+            'headers': headers,
+            'table_items': table_items,
+            'units': units,
+            'duties': Duty.objects.filter(is_commandant=True),
+            'selected_unit': unit_id,
+            'selected_duty': duty_id,
+            'total_people': len(table_items),
+        })
+
+        return context
+
+
+class CommandantStaffDetailView(IsCommandantMixin, TemplateView):
+    template_name = 'profiles/commandant/staff/detail.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        person_id = self.kwargs['pk']
+        try:
+            person = People.objects.select_related('department', 'rank').get(pk=person_id)
+        except People.DoesNotExist:
+            person = None
+
+        context['person'] = person
+        return context
+
+from django.shortcuts import redirect
+from django.contrib import messages
+from django.views.generic import ListView, CreateView, UpdateView
+from django.urls import reverse_lazy, reverse
+from django.utils.safestring import mark_safe
+from django.template.loader import render_to_string
+from django.contrib.messages.views import SuccessMessageMixin as DjangoSuccessMessageMixin
+from .models import Duty
+from .forms import DutyForm
+
+from core.mixins import (
+    LoginRequiredMixin,
+    GroupRequiredMixin,
+    HasFacultyMixin,
+    HasDepartmentMixin,
+    BaseDeleteView,
+    SuccessMessageMixin,
+)
+
+from django.views.generic import (
+    ListView,
+    CreateView,
+    UpdateView,
+    DeleteView,
+)
+
+
+class BaseDutyView:
+    """
+    Базовый класс для всех действий с нарядами
+    """
+    model = Duty
+    form_class = DutyForm
+    template_name_prefix = 'profiles/shared/duty/'
+    namespace = None  # commandant / faculty / department
+    related_field = None  # commandant / faculty / department
+
+    def get_template_names(self):
+        return [f"{self.template_name_prefix}{self.template_name_suffix}.html"]
+
+    def get_queryset(self):
+        user = self.request.user
+        queryset = None
+
+        if self.related_field == 'commandant':
+            queryset = Duty.objects.filter(is_commandant=True)
+        elif self.related_field == 'faculty':
+            queryset = Duty.objects.filter(
+                faculty=user.faculty,
+                department__isnull=True,
+                is_commandant=False
+            )
+        elif self.related_field == 'department':
+            queryset = Duty.objects.filter(
+                department=user.department,
+                is_commandant=False
+            )
+        else:
+            queryset = Duty.objects.none()
+
+        return queryset
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        object_name = ''
+        if self.related_field == 'commandant':
+            object_name = 'Коменданта'
+        elif self.related_field == 'faculty' and self.request.user.faculty:
+            object_name = self.request.user.faculty.name
+        elif self.related_field == 'department' and self.request.user.department:
+            object_name = self.request.user.department.name
+
+        context.update({
+            'namespace': self.namespace,
+            'related_type': self.related_field,
+            'object_name': object_name,
+        })
+        return context
+
+    def get_success_url(self):
+        return reverse(f'{self.namespace}:duty:list')
+
+
+# === СПИСОК НАРЯДОВ ===
+
+class DutyListView(BaseDutyView, ListView):
+    context_object_name = 'duties'
+    template_name_suffix = '_list'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['add_url'] = reverse(f'{self.namespace}:duty:add')
+        return context
+
+
+# === ДОБАВЛЕНИЕ НАРЯДА ===
+
+class DutyCreateView(
+    BaseDutyView,
+    LoginRequiredMixin,
+    GroupRequiredMixin,
+    SuccessMessageMixin,
+    CreateView
+):
+    template_name_suffix = '_add'
+    success_message = 'Наряд успешно добавлен'
+    error_message = 'Ошибка при добавлении наряда'
+
+    def form_valid(self, form):
+        user = self.request.user
+
+        if self.related_field == 'commandant':
+            form.instance.is_commandant = True
+        elif self.related_field == 'faculty':
+            form.instance.faculty = user.faculty
+            form.instance.department = None
+            form.instance.is_commandant = False
+        elif self.related_field == 'department':
+            form.instance.department = user.department
+            form.instance.faculty = None
+            form.instance.is_commandant = False
+
+        return super().form_valid(form)
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['request'] = self.request
+        return kwargs
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        form = context['form']
+
+        name_html = render_to_string("components/form_group.html", {"field": form['duty_name']}, request=self.request)
+        weight_html = render_to_string("components/form_group.html", {"field": form['duty_weight']}, request=self.request)
+
+        context.update({
+            'form_body': mark_safe('\n'.join([name_html, weight_html])),
+            'cancel_url': self.get_success_url(),
+        })
+
+        return context
+
+
+# === РЕДАКТИРОВАНИЕ НАРЯДА ===
+
+class DutyUpdateView(
+    BaseDutyView,
+    LoginRequiredMixin,
+    GroupRequiredMixin,
+    SuccessMessageMixin,
+    UpdateView
+):
+    template_name_suffix = '_edit'
+    success_message = 'Наряд успешно обновлен'
+    error_message = 'Ошибка при редактировании наряда'
+
+    def dispatch(self, request, *args, **kwargs):
+        duty = self.get_object()
+        user = request.user
+
+        # Проверяем права на редактирование
+        if duty.is_commandant and not user.groups.filter(name='Комендант').exists():
+            messages.warning(request, "Вы не можете редактировать наряд коменданта")
+            return redirect(f'{self.namespace}:duty:list')
+
+        if duty.faculty and duty.faculty != user.faculty:
+            messages.warning(request, "Вы не можете редактировать чужой наряд")
+            return redirect(f'{self.namespace}:duty:list')
+
+        if duty.department and duty.department != user.department:
+            messages.warning(request, "Вы не можете редактировать чужой наряд")
+            return redirect(f'{self.namespace}:duty:list')
+
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        form = context['form']
+
+        name_html = render_to_string("components/form_group.html", {"field": form['duty_name']}, request=self.request)
+        weight_html = render_to_string("components/form_group.html", {"field": form['duty_weight']}, request=self.request)
+
+        delete_url = reverse(f'{self.namespace}:duty:delete', args=[self.object.pk])
+
+        context.update({
+            'form_body': mark_safe('\n'.join([name_html, weight_html])),
+            'cancel_url': self.get_success_url(),
+            'delete_url': delete_url,
+        })
+
+        return context
+
+
+# === УДАЛЕНИЕ НАРЯДА ===
+
+
+class DutyDeleteView(LoginRequiredMixin, SuccessMessageMixin, DeleteView):
+    model = Duty
+    template_name = 'profiles/shared/duty/confirm_delete.html'
+    context_object_name = 'object'  # для шаблона confirm_delete.html
+    success_message = 'Наряд успешно удалён'
+    error_message = 'Ошибка при удалении наряда'
+
+    def get_success_url(self):
+        return reverse_lazy(f'{self.namespace}:duty:list')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['cancel_url'] = self.get_success_url()
+        return context
+
+    def post(self, request, *args, **kwargs):
+        try:
+            response = super().post(request, *args, **kwargs)
+            messages.success(request, self.success_message)
+            return response
+        except Exception as e:
+            messages.error(request, self.error_message + f': {str(e)}')
+            return redirect(self.get_success_url())
+
+
+# === КОНКРЕТНЫЕ ПРЕДСТАВЛЕНИЯ ===
+
+# Комендант
+class CommandantDutyListView(DutyListView):
+    related_field = 'commandant'
+    namespace = 'commandant'
+    group_required = ['Комендант']
+
+
+class CommandantDutyCreateView(DutyCreateView):
+    related_field = 'commandant'
+    namespace = 'commandant'
+    group_required = ['Комендант']
+
+
+class CommandantDutyUpdateView(DutyUpdateView):
+    related_field = 'commandant'
+    namespace = 'commandant'
+    group_required = ['Комендант']
+
+
+class CommandantDutyDeleteView(DutyDeleteView):
+    related_field = 'commandant'
+    namespace = 'commandant'
+    group_required = ['Комендант']
+
+
+# Факультет
+class FacultyDutyListView(DutyListView, HasFacultyMixin):
+    related_field = 'faculty'
+    namespace = 'faculty'
+
+
+class FacultyDutyCreateView(DutyCreateView, HasFacultyMixin):
+    related_field = 'faculty'
+    namespace = 'faculty'
+    group_required = ['Факультет']
+
+
+class FacultyDutyUpdateView(DutyUpdateView, HasFacultyMixin):
+    related_field = 'faculty'
+    namespace = 'faculty'
+    group_required = ['Факультет']
+
+
+class FacultyDutyDeleteView(DutyDeleteView, HasFacultyMixin):
+    related_field = 'faculty'
+    namespace = 'faculty'
+    group_required = ['Факультет']
+
+
+# Кафедра
+class DepartmentDutyListView(DutyListView, HasDepartmentMixin):
+    related_field = 'department'
+    namespace = 'department'
+    group_required = ['Кафедра']
+
+
+class DepartmentDutyCreateView(DutyCreateView, HasDepartmentMixin):
+    related_field = 'department'
+    namespace = 'department'
+    group_required = ['Кафедра']
+
+
+class DepartmentDutyUpdateView(DutyUpdateView, HasDepartmentMixin):
+    related_field = 'department'
+    namespace = 'department'
+    group_required = ['Кафедра']
+
+
+class DepartmentDutyDeleteView(DutyDeleteView, HasDepartmentMixin):
+    related_field = 'department'
+    namespace = 'department'
+    group_required = ['Кафедра']
+
+
+{% extends "base_account.html" %}
+{% load static %}
+
+{% block title %}Профиль коменданта{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'css/profile.css' %}">
+{% endblock %}
+
+
+{% block account_content %}
+<div class="profile-container">
+    <div class="profile-header">
+        <div class="profile-avatar">
+            <i class="fas fa-university"></i>
+        </div>
+        <div class="profile-title">
+            <h1>Профиль коменданта</h1>
+            {% if user.department %}
+            <p class="department-name">{{ user.department }}</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="profile-card">
+        <div class="profile-section">
+            <h3><i class="fas fa-user-circle"></i> Основная информация</h3>
+            <div class="info-grid">
+                <div class="info-item">
+                    <span class="info-label">Имя пользователя:</span>
+                    <span class="info-value">{{ user.username }}</span>
+                </div>
+                
+                
+                <div class="info-item">
+                    <span class="info-label">Статус:</span>
+                    <span class="info-value">Активный</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+<!-- templates/profiles/shared/duty/_add.html -->
+
+{% extends "pages/generic_form.html" %}
+{% block title %}Добавить наряд{% endblock %}
+{% block icon %}plus-circle{% endblock %}
+
+{% block form_body %}
+    {{ form_body|safe }}
+    
+    <div class="row">
+        <div class="col-md-6">
+            {{ form.assigned_type.label_tag }}
+            {{ form.assigned_type }}
+            {% for error in form.assigned_type.errors %}
+                <div class="invalid-feedback d-block">{{ error }}</div>
+            {% endfor %}
+        </div>
+
+        <div class="col-md-6" id="assigned-faculty-field" style="display: none;">
+            {{ form.assigned_faculty.label_tag }}
+            {{ form.assigned_faculty }}
+            {% for error in form.assigned_faculty.errors %}
+                <div class="invalid-feedback d-block">{{ error }}</div>
+            {% endfor %}
+        </div>
+
+        <div class="col-md-6" id="assigned-department-field" style="display: none;">
+            {{ form.assigned_department.label_tag }}
+            {{ form.assigned_department }}
+            {% for error in form.assigned_department.errors %}
+                <div class="invalid-feedback d-block">{{ error }}</div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-6">
+            {{ form.people_count.label_tag }}
+            {{ form.people_count }}
+            {% for error in form.people_count.errors %}
+                <div class="invalid-feedback d-block">{{ error }}</div>
+            {% endfor %}
+        </div>
+    </div>
+{% endblock %}
+
+
+<!-- templates/profiles/shared/duty/_edit.html -->
+
+{% extends "pages/generic_form.html" %}
+{% block title %}Редактировать наряд "{{ object.duty_name }}"{% endblock %}
+{% block icon %}edit{% endblock %}
+
+{% block form_body %}
+    {{ form_body|safe }}
+
+    <div class="row">
+        <div class="col-md-6">
+            {{ form.assigned_type.label_tag }}
+            {{ form.assigned_type }}
+            {% for error in form.assigned_type.errors %}
+                <div class="invalid-feedback d-block">{{ error }}</div>
+            {% endfor %}
+        </div>
+
+        <div class="col-md-6" id="assigned-faculty-field" {% if form.assigned_type.value != 'faculty' %}style="display: none;"{% endif %}>
+            {{ form.assigned_faculty.label_tag }}
+            {{ form.assigned_faculty }}
+            {% for error in form.assigned_faculty.errors %}
+                <div class="invalid-feedback d-block">{{ error }}</div>
+            {% endfor %}
+        </div>
+
+        <div class="col-md-6" id="assigned-department-field" {% if form.assigned_type.value != 'department' %}style="display: none;"{% endif %}>
+            {{ form.assigned_department.label_tag }}
+            {{ form.assigned_department }}
+            {% for error in form.assigned_department.errors %}
+                <div class="invalid-feedback d-block">{{ error }}</div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-6">
+            {{ form.people_count.label_tag }}
+            {{ form.people_count }}
+            {% for error in form.people_count.errors %}
+                <div class="invalid-feedback d-block">{{ error }}</div>
+            {% endfor %}
+        </div>
+    </div>
+{% endblock %}
+
+{% block form_actions %}
+    {{ block.super }}
+
+    {% if delete_url %}
+    <a href="{{ delete_url }}" class="btn btn-danger">
+        <i class="fas fa-trash"></i> Удалить
+    </a>
+    {% endif %}
+{% endblock %}
+
+
+<!-- templates/profiles/shared/duty/_list.html -->
+
+{% extends "base_account.html" %}
+{% load static %}
+
+{% block title %}
+    Наряды {{ related_type|title }} {{ object_name }}
+{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'css/department.css' %}">
+{% endblock %}
+
+{% block account_content %}
+<div class="department-staff-container">
+    <div class="header-with-button">
+        <h1>
+            Наряды 
+            {% if related_type == 'department' %}
+                {{ object_name }} кафедры 
+            {% elif related_type == 'faculty' %}
+                управления {{ object_name }} факультета 
+            {% else %}
+                {{ related_type_label }}
+            {% endif %}
+        </h1>
+        <a href="{{ add_url }}" class="add-button">
+            <i class="fas fa-plus"></i> Добавить наряд
+        </a>
+    </div>
+
+    {% if duties %}
+    <div class="table-responsive">
+        <table class="staff-table">
+            <thead>
+                <tr>
+                    <th>Название</th>
+                    <th>Вес</th>
+                    <th>Кол-во людей</th>
+                    <th>Закрепление</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for duty in duties %}
+                <tr onclick="window.location='{{ duty.get_edit_url }}';" style="cursor: pointer;">
+                    <td>{{ duty.duty_name }}</td>
+                    <td>{{ duty.duty_weight }}</td>
+                    <td>{{ duty.people_count }}</td>
+                    <td>
+                        {% if duty.assigned_faculty %}
+                            Факультет: {{ duty.assigned_faculty.name }}
+                        {% elif duty.assigned_department %}
+                            Кафедра: {{ duty.assigned_department.name }}
+                        {% else %}
+                            —
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-message">
+        <p>Нет данных о нарядах</p>
+        <a href="{{ add_url }}" class="add-button">
+            <i class="fas fa-plus"></i> Добавить первый наряд
+        </a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+
+<!-- templates/profiles/shared/duty/confirm_delete.html -->
+
+{% extends "pages/generic_form.html" %}
+{% block title %}Подтвердите удаление{% endblock %}
+{% block icon %}trash{% endblock %}
+
+{% block form_body %}
+    <p>Вы действительно хотите удалить наряд <strong>{{ object.duty_name }}</strong>?</p>
+{% endblock %}
+
+{% block form_actions %}
+    <button type="submit" class="btn btn-danger">
+        <i class="fas fa-trash"></i> Да, удалить
+    </button>
+    <a href="{{ cancel_url }}" class="btn btn-secondary">
+        <i class="fas fa-times"></i> Отмена
+    </a>
+{% endblock %}
+
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Распределятор{% endblock %}</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/base.css' %}">
+    <link rel="stylesheet" href="{% static 'css/header.css' %}">
+    <link rel="stylesheet" href="{% static 'css/footer.css' %}">
+    <link rel="stylesheet" href="{% static 'css/sidebar.css' %}">
+    <link rel="stylesheet" href="{% static 'css/auth.css' %}">
+    <link rel="stylesheet" href="{% static 'css/account.css' %}">
+    <link rel="stylesheet" href="{% static 'css/utilities.css' %}">
+    <link rel="stylesheet" href="{% static 'css/base.css' %}">
+    <link rel="stylesheet" href="{% static 'css/buttons.css' %}">
+    <link rel="stylesheet" href="{% static 'css/forms.css' %}">
+    <link rel="stylesheet" href="{% static 'css/department.css' %}">
+    <link rel="stylesheet" href="{% static 'css/notifications.css' %}">
+    {% block extra_head %}
+    {% endblock %}
+</head>
+<body class="{% if request.path == '/' %}home-page{% endif %}">
+    <div class="layout">
+        {% include "includes/header.html" %}
+        
+        <main class="main">
+            {% block content %}
+            <!-- Контент будет здесь -->
+            {% endblock %}
+        </main>
+        
+        {% include "includes/footer.html" %}
+    </div>
+    {% block extra_script %}
+    {% endblock %}
+
+    <script src="{% static 'js/table.js' %}"></script>
+</body>
+</html>
+
+# duty/forms.py
+
+from django import forms
+from .models import Duty
+from unit.models import Faculty, Department
+from django.core.exceptions import ValidationError
+
+
+class DutyForm(forms.ModelForm):
+    assigned_type = forms.ChoiceField(
+        label='Тип подразделения',
+        choices=[
+            ('', '---'),
+            ('faculty', 'Факультет'),
+            ('department', 'Кафедра')
+        ],
+        widget=forms.Select(attrs={'class': 'form-control'}),
+        required=False,
+    )
+
+    assigned_faculty = forms.ModelChoiceField(
+        queryset=Faculty.objects.all(),
+        label='Закреплённый факультет',
+        required=False,
+        empty_label='Не выбрано',
+        widget=forms.Select(attrs={'class': 'form-control'})
+    )
+
+    assigned_department = forms.ModelChoiceField(
+        queryset=Department.objects.all(),
+        label='Закреплённая кафедра',
+        required=False,
+        empty_label='Не выбрано',
+        widget=forms.Select(attrs={'class': 'form-control'})
+    )
+
+    def __init__(self, *args, **kwargs):
+        self.request = kwargs.pop('request', None)
+        super().__init__(*args, **kwargs)
+
+        # Применяем классы ко всем полям
+        for field_name, field in self.fields.items():
+            if field_name not in ['assigned_type', 'assigned_faculty', 'assigned_department']:
+                field.widget.attrs.update({
+                    'class': 'form-control',
+                    'autocomplete': 'off'
+                })
+                if isinstance(field.widget, forms.DateInput):
+                    field.widget.attrs.update({'type': 'date'})
+
+        # Ограничиваем выбор для текущего пользователя
+        if self.request and hasattr(self.request, 'user') and self.request.user.is_authenticated:
+            user = self.request.user
+            if user.department:
+                self.fields['assigned_department'].queryset = Department.objects.filter(id=user.department.id)
+            elif user.faculty:
+                self.fields['assigned_faculty'].queryset = Faculty.objects.filter(id=user.faculty.id)
+
+        # Устанавливаем начальные значения для редактирования
+        if self.instance and self.instance.pk:
+            if self.instance.assigned_faculty:
+                self.initial['assigned_type'] = 'faculty'
+                self.fields['assigned_faculty'].initial = self.instance.assigned_faculty
+            elif self.instance.assigned_department:
+                self.initial['assigned_type'] = 'department'
+                self.fields['assigned_department'].initial = self.instance.assigned_department
+
+    class Meta:
+        model = Duty
+        fields = ['duty_name', 'duty_weight', 'people_count']
+
+
+    def clean(self):
+        cleaned_data = super().clean()
+        assigned_type = cleaned_data.get('assigned_type')
+        faculty = cleaned_data.get('assigned_faculty')
+        department = cleaned_data.get('assigned_department')
+
+        # Если тип не выбран — обнуляем оба поля
+        if not assigned_type:
+            cleaned_data['assigned_faculty'] = None
+            cleaned_data['assigned_department'] = None
+        elif assigned_type == 'faculty' and not faculty:
+            raise ValidationError({'assigned_faculty': 'Выберите факультет.'})
+        elif assigned_type == 'department' and not department:
+            raise ValidationError({'assigned_department': 'Выберите кафедру.'})
+
+        return cleaned_data
+
+    def save(self, commit=True):
+        duty = super().save(commit=False)
+        assigned_type = self.cleaned_data.get('assigned_type')
+
+        if assigned_type == 'faculty':
+            duty.assigned_faculty = self.cleaned_data.get('assigned_faculty')
+            duty.assigned_department = None
+        elif assigned_type == 'department':
+            duty.assigned_department = self.cleaned_data.get('assigned_department')
+            duty.assigned_faculty = None
+        else:
+            # Если тип не выбран — обнуляем оба поля
+            duty.assigned_faculty = None
+            duty.assigned_department = None
+
+        if commit:
+            duty.save()
+        return duty
+
+
+/* Reset и базовые стили */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #1e1e1e;
+    color: #f0f0f0;
+    line-height: 1.6;
+    padding-top: 70px; /* Отступ для header */
+    padding-bottom: 0; /* Убрали фиксированный отступ для footer */
+    margin-bottom: 60px; /* Добавили margin вместо padding */
+    min-height: 100vh;
+    position: relative;
+    box-sizing: border-box;
+}
+
+.layout {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+/* Фиксированная шапка */
+.header {
+    background-color: #252526;
+    padding: 0 20px;
+    color: white;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 70px;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+}
+
+/* Контейнер для содержимого шапки */
+.header-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    height: 100%;
+    padding: 0 20px; /* Добавляем отступы по бокам */
+}
+
+/* Стили для логотипа */
+.logo {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #3aa794;
+    text-decoration: none;
+    margin-right: auto; /* Прижимаем к левому краю */
+}
+
+/* Контейнер для кнопок */
+.header-actions {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    height: 100%;
+    margin-left: auto; /* Прижимаем к правому краю */
+}
+
+
+/* Базовые стили кнопок */
+.header-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 16px;
+    border-radius: 4px;
+    font-weight: 500;
+    font-size: 14px;
+    line-height: 1;
+    text-decoration: none;
+    transition: all 0.2s ease-out;
+    white-space: nowrap;
+    height: 36px;
+}
+
+
+/* Основной контент */
+.main {
+    flex: 1;
+    padding: 20px;
+    margin-top: 10px;
+    padding-bottom: 80px; /* Дополнительный отступ снизу */
+}
+
+/* Личный кабинет */
+.account-layout {
+    display: flex;
+    min-height: calc(100vh - 130px); /* Учитываем высоту header и footer */
+}
+
+.sidebar {
+    width: 250px;
+    background-color: #252526;
+    position: fixed;
+    top: 70px; /* Под header */
+    bottom: 60px; /* Над footer */
+    left: 0;
+    padding: 15px 0;
+    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+    overflow-y: auto;
+    z-index: 900;
+}
+
+.sidebar-nav {
+    width: 100%;
+}
+
+.sidebar-title {
+    color: #f0f0f0;
+    padding: 0 20px 15px;
+    border-bottom: 1px solid #3e3e42;
+    margin-bottom: 10px;
+    font-size: 1.1rem;
+}
+
+.nav-item {
+    display: block;
+    padding: 12px 20px;
+    color: #f0f0f0;
+    text-decoration: none;
+    transition: all 0.3s;
+    border-left: 3px solid transparent;
+}
+
+.nav-item:hover {
+    background-color: #2d2d30;
+}
+
+.nav-item.active {
+    background-color: #2d2d30;
+    border-left: 3px solid #4ec9b0;
+}
+
+.nav-item.logout {
+    color: #f48771;
+}
+
+.nav-item.logout:hover {
+    background-color: #382929;
+}
+
+.account-content {
+    margin-left: 250px;
+    padding: 30px;
+    width: calc(100% - 250px);
+    background-color: #2d2d2d;
+    min-height: calc(100vh - 130px); /* Учитываем высоту header и footer */
+}
+
+/* Стили для страницы входа */
+.auth-container {
+    position: fixed;
+    top: 70px; /* Отступ под header */
+    bottom: 60px; /* Отступ над footer */
+    left: 0;
+    right: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: #1e1e1e; /* Фон как у body */
+    overflow: hidden; /* Запрещаем прокрутку */
+    padding: 20px;
+}
+
+.auth-card {
+    background-color: #252526;
+    padding: 30px;
+    border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+    width: 100%;
+    max-width: 400px;
+    max-height: 100%; /* Ограничиваем высоту карточки */
+    overflow-y: auto; /* Прокрутка только внутри карточки */
+}
+
+/* Отключаем прокрутку body на странице входа */
+.login-page body {
+    overflow: hidden;
+    height: 100vh;
+}
+
+.auth-card h2 {
+    color: #f0f0f0;
+    margin-bottom: 20px;
+    text-align: center;
+    font-size: 1.8rem;
+}
+
+.auth-form {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.auth-form p {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.auth-form label {
+    color: #d4d4d4;
+    font-size: 0.9rem;
+}
+
+.auth-form input {
+    padding: 12px 15px;
+    background-color: #333;
+    border: 1px solid #3e3e42;
+    border-radius: 4px;
+    color: #f0f0f0;
+    font-size: 1rem;
+    transition: border-color 0.3s;
+}
+
+.auth-form input:focus {
+    outline: none;
+    border-color: #4ec9b0;
+}
+
+.auth-submit {
+    padding: 12px;
+    background-color: #4ec9b0;
+    color: #1e1e1e;
+    border: none;
+    border-radius: 4px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    margin-top: 10px;
+}
+
+.auth-submit:hover {
+    background-color: #3aa794;
+}
+
+/* Фиксированный подвал */
+.footer {
+    background-color: #252526;
+    padding: 15px 20px;
+    color: #aaa;
+    text-align: center;
+    border-top: 1px solid #3e3e42;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: auto; /* Изменено с фиксированной высоты */
+    min-height: 60px; /* Минимальная высота */
+    z-index: 1000;
+    box-sizing: border-box; /* Учитываем padding в высоте */
+}
+
+
+/* Стили для навигации в шапке */
+.header-nav {
+    display: flex;
+    flex-direction: row-reverse;
+    justify-content: flex-start;
+    align-items: center;
+    height: 100%;
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
+}
+
+/* Контейнер для кнопок */
+.header-actions {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+/* Базовые стили кнопок */
+.header-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 16px;
+    border-radius: 4px;
+    font-weight: 500;
+    font-size: 14px;
+    line-height: 1;
+    text-decoration: none;
+    transition: all 0.2s ease-out;
+    white-space: nowrap;
+}
+
+/* Стиль кнопки входа */
+.header-btn--primary {
+    background-color: #4ec9b0;
+    color: #1e1e1e;
+}
+
+.header-btn--primary:hover {
+    background-color: #3aa794;
+    transform: translateY(-1px);
+}
+
+/* Стиль кнопки кабинета */
+.header-btn--secondary {
+    background-color: rgba(255, 255, 255, 0.08);
+    color: #f0f0f0;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.header-btn--secondary:hover {
+    background-color: rgba(255, 255, 255, 0.12);
+    border-color: rgba(255, 255, 255, 0.16);
+}
+
+/* Показываем кнопки только на главной */
+.home-page .header-actions {
+    display: flex;
+}
+
+/* По умолчанию скрываем */
+.header-actions {
+    display: none;
+}
+
+/* Адаптация для мобильных */
+@media (max-width: 768px) {
+    .header-nav {
+        padding: 0 15px;
+    }
+    
+    .header-actions {
+        gap: 8px;
+    }
+    
+    .header-btn {
+        padding: 6px 12px;
+        font-size: 13px;
+    }
+}
+
+/* Для очень маленьких экранов */
+@media (max-width: 480px) {
+    .header-actions {
+        flex-direction: column;
+        gap: 6px;
+        align-items: flex-end;
+    }
+    
+    .header-btn {
+        width: 100%;
+        justify-content: flex-end;
+        padding: 5px 10px;
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    const animateOnScroll = function() {
+        const elements = document.querySelectorAll('.feature-card, .section-title');
+        
+        elements.forEach(element => {
+            const elementPosition = element.getBoundingClientRect().top;
+            const screenPosition = window.innerHeight / 1.3;
+            
+            if (elementPosition < screenPosition) {
+                element.style.opacity = '1';
+                element.style.transform = 'translateY(0)';
+            }
+        });
+    };
+    
+    // Инициализация
+    const featureCards = document.querySelectorAll('.feature-card');
+    featureCards.forEach(card => {
+        card.style.opacity = '0';
+        card.style.transform = 'translateY(20px)';
+        card.style.transition = 'all 0.6s ease';
+    });
+    
+    const sectionTitle = document.querySelector('.section-title');
+    sectionTitle.style.opacity = '0';
+    sectionTitle.style.transform = 'translateY(20px)';
+    sectionTitle.style.transition = 'all 0.6s ease';
+    
+    window.addEventListener('scroll', animateOnScroll);
+    animateOnScroll(); // Запустить сразу для видимых элементов
+});
+
+document.addEventListener('DOMContentLoaded', function () {
+    const rows = document.querySelectorAll('.clickable-row');
+
+    rows.forEach(row => {
+        row.addEventListener('mouseenter', function () {
+            this.style.backgroundColor = '#333';
+        });
+
+        row.addEventListener('mouseleave', function () {
+            this.style.backgroundColor = '';
+        });
+
+        row.addEventListener('click', function () {
+            const url = this.getAttribute('data-url');
+            if (url) window.location.href = url;
+        });
+    });
+});

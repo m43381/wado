@@ -1,0 +1,156 @@
+{% extends "base_account.html" %}
+{% load static %}
+
+{% block title %}Управление исключениями дат{% endblock %}
+
+{% block account_content %}
+<div class="exceptions-container">
+    <div class="page-header">
+        <h1>Управление исключениями дат</h1>
+        <a href="{% url 'commandant:duty_plan' %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Назад к планированию
+        </a>
+    </div>
+
+    <!-- Форма добавления исключений -->
+    <div class="add-exception-form">
+        <h3>Добавить исключения</h3>
+        <form method="post">
+            {% csrf_token %}
+            
+            <div class="form-row">
+                <div class="form-group">
+                    {{ form.duty.label_tag }}
+                    {{ form.duty }}
+                </div>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    {{ form.excluded_dates.label_tag }}
+                    {{ form.excluded_dates }}
+                    <small class="form-text">Укажите даты через запятую в формате дд.мм.гггг</small>
+                </div>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    {{ form.reason.label_tag }}
+                    {{ form.reason }}
+                </div>
+            </div>
+            
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-ban"></i> Добавить исключения
+            </button>
+        </form>
+    </div>
+
+    <!-- Список текущих исключений -->
+    <div class="exceptions-list">
+        <h3>Текущие исключения</h3>
+        
+        {% if exceptions %}
+        <div class="exceptions-table">
+            {% for exception in exceptions %}
+            <div class="exception-item">
+                <div class="exception-info">
+                    <strong>{{ exception.duty.duty_name }}</strong>
+                    <span class="exception-date">{{ exception.excluded_date|date:"d.m.Y" }}</span>
+                    {% if exception.reason %}
+                    <span class="exception-reason">({{ exception.reason }})</span>
+                    {% endif %}
+                </div>
+                <form method="post" action="{% url 'commandant:delete_exception' %}" class="delete-form">
+                    {% csrf_token %}
+                    <input type="hidden" name="exception_id" value="{{ exception.id }}">
+                    <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Удалить это исключение?')">
+                        <i class="fas fa-trash"></i> Удалить
+                    </button>
+                </form>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-message">
+            <p>Нет добавленных исключений</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+.exceptions-container {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+}
+
+.add-exception-form {
+    background-color: #252526;
+    padding: 20px;
+    border-radius: 8px;
+    margin-bottom: 30px;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 15px;
+    margin-bottom: 15px;
+}
+
+.exceptions-table {
+    background-color: #252526;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.exception-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 20px;
+    border-bottom: 1px solid #3e3e42;
+}
+
+.exception-item:last-child {
+    border-bottom: none;
+}
+
+.exception-info {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.exception-date {
+    background-color: #4ec9b0;
+    color: #1e1e1e;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-weight: 500;
+}
+
+.exception-reason {
+    color: #888;
+    font-style: italic;
+}
+
+.delete-form {
+    margin: 0;
+}
+
+.empty-message {
+    text-align: center;
+    padding: 40px;
+    color: #888;
+}
+</style>
+{% endblock %}

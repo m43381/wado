@@ -14,6 +14,7 @@ def sidebar_menu(request):
             {'name': 'Профиль коменданта', 'url_name': 'commandant:profile'},
             {'name': 'Наряды', 'url_name': 'commandant:duty:list'},
             {'name': 'Личный состав', 'url_name': 'commandant:staff'},
+            {'name': 'План нарядов', 'url_name': 'commandant:duty_plan'},
             {'name': 'Уведомления', 'url_name': 'notifications:list'},
         ]
     elif user_type == 'faculty':
