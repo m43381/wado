@@ -1,0 +1,787 @@
+{% extends "base_account.html" %}
+{% load static %}
+{% load dict_filters %}
+{% load weekday_filters %}
+{% load custom_filters %}
+
+{% block title %}План: {{ plan.month|date:"F Y" }} • Распределятор{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'css/commandant_duty_plan.css' %}">
+<style>
+/* Основной контейнер */
+.plan-calendar-view {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 20px;
+    min-height: calc(100vh - 120px);
+}
+
+/* Хедер плана */
+.calendar-header {
+    background: linear-gradient(135deg, #2d2d30 0%, #252526 100%);
+    border-radius: 20px;
+    padding: 30px 40px;
+    margin-bottom: 30px;
+    border-left: 6px solid #4ec9b0;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+}
+
+.calendar-header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 200px;
+    height: 200px;
+    background: radial-gradient(circle, rgba(78, 201, 176, 0.1) 0%, transparent 70%);
+}
+
+.header-content {
+    position: relative;
+    z-index: 2;
+}
+
+.plan-title {
+    font-size: 2.5rem;
+    font-weight: 800;
+    color: #ffffff;
+    margin: 0 0 10px 0;
+    background: linear-gradient(135deg, #4ec9b0, #569cd6);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.plan-subtitle {
+    color: #888;
+    font-size: 1.1rem;
+    margin: 0 0 20px 0;
+}
+
+.header-meta {
+    display: flex;
+    gap: 25px;
+    flex-wrap: wrap;
+}
+
+.meta-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #d4d4d4;
+    font-size: 0.9rem;
+}
+
+.meta-icon {
+    color: #4ec9b0;
+    font-size: 1rem;
+}
+
+.status-badge {
+    padding: 6px 12px;
+    border-radius: 15px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    background: rgba(78, 201, 176, 0.2);
+    color: #4ec9b0;
+    border: 1px solid rgba(78, 201, 176, 0.3);
+}
+
+/* Основной календарь */
+.calendar-main {
+    background: linear-gradient(135deg, #252526 0%, #2d2d30 100%);
+    border-radius: 20px;
+    padding: 30px;
+    border: 1px solid #3e3e42;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+}
+
+.calendar-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.calendar-title {
+    font-size: 1.4rem;
+    font-weight: 600;
+    color: #ffffff;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.calendar-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+/* Сетка календаря */
+.calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 1px;
+    background: #3e3e42;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid #3e3e42;
+}
+
+/* Заголовки дней */
+.day-header {
+    background: linear-gradient(135deg, #2d2d30 0%, #1e1e1e 100%);
+    padding: 15px 10px;
+    text-align: center;
+    color: #4ec9b0;
+    font-weight: 600;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    border-bottom: 2px solid #4ec9b0;
+}
+
+/* Ячейки дней */
+.calendar-day {
+    background: #252526;
+    min-height: 140px;
+    padding: 12px 10px;
+    position: relative;
+    transition: all 0.3s ease;
+    border: 1px solid transparent;
+}
+
+.calendar-day.empty {
+    background: #1e1e1e;
+}
+
+.calendar-day.today {
+    background: rgba(86, 156, 214, 0.1);
+    border: 2px solid #569cd6;
+    box-shadow: 0 0 20px rgba(86, 156, 214, 0.2);
+}
+
+.calendar-day:hover {
+    background: #2d2d30;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    z-index: 2;
+}
+
+/* Номер дня */
+.day-number {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #ffffff;
+    margin-bottom: 10px;
+    padding: 4px 8px;
+    background: rgba(78, 201, 176, 0.2);
+    border-radius: 6px;
+    display: inline-block;
+    min-width: 28px;
+    text-align: center;
+}
+
+.calendar-day.today .day-number {
+    background: #569cd6;
+    color: white;
+    box-shadow: 0 2px 8px rgba(86, 156, 214, 0.4);
+}
+
+/* Назначения в дне */
+.day-assignments {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.assignment-item {
+    background: linear-gradient(135deg, #2d2d30 0%, #3e3e42 100%);
+    padding: 8px 10px;
+    border-radius: 8px;
+    border-left: 3px solid #569cd6;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+}
+
+.assignment-item:hover {
+    transform: translateX(3px);
+    border-left-width: 5px;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
+}
+
+.assignment-item.fixed {
+    border-left-color: #4ec9b0;
+    background: linear-gradient(135deg, rgba(30, 58, 30, 0.3) 0%, #2d2d30 100%);
+}
+
+.assignment-item.manual {
+    border-left-color: #d7ba7d;
+    background: linear-gradient(135deg, rgba(255, 152, 0, 0.1) 0%, #2d2d30 100%);
+}
+
+.duty-name {
+    font-weight: 700;
+    color: #f0f0f0;
+    font-size: 0.8rem;
+    line-height: 1.2;
+    margin-bottom: 3px;
+}
+
+.unit-name {
+    font-size: 0.75rem;
+    color: #d4d4d4;
+    line-height: 1.2;
+}
+
+.unit-name.changed {
+    color: #d7ba7d;
+    font-weight: 600;
+}
+
+.click-hint {
+    position: absolute;
+    top: 50%;
+    right: 6px;
+    transform: translateY(-50%);
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 10px;
+    opacity: 0;
+    transition: all 0.3s ease;
+}
+
+.assignment-item:hover .click-hint {
+    opacity: 1;
+    transform: translateY(-50%) scale(1.1);
+}
+
+/* Легенда */
+.calendar-legend {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    margin-top: 25px;
+    padding: 15px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 10px;
+    border: 1px solid #3e3e42;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #d4d4d4;
+    font-size: 0.85rem;
+}
+
+.legend-color {
+    width: 12px;
+    height: 12px;
+    border-radius: 2px;
+}
+
+.legend-fixed {
+    background: #4ec9b0;
+}
+
+.legend-rotating {
+    background: #569cd6;
+}
+
+.legend-manual {
+    background: #d7ba7d;
+}
+
+/* Пустое состояние */
+.empty-calendar {
+    text-align: center;
+    padding: 60px 20px;
+    color: #888;
+}
+
+.empty-icon {
+    font-size: 4rem;
+    margin-bottom: 20px;
+    opacity: 0.5;
+}
+
+.empty-title {
+    color: #d4d4d4;
+    font-size: 1.4rem;
+    margin-bottom: 10px;
+}
+
+.empty-text {
+    margin-bottom: 25px;
+    line-height: 1.5;
+}
+
+/* Кнопки */
+.btn-primary {
+    background: linear-gradient(135deg, #4ec9b0 0%, #3aa794 100%);
+    color: #1e1e1e;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-weight: 600;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.3s ease;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(78, 201, 176, 0.4);
+    color: #1e1e1e;
+}
+
+.btn-secondary {
+    background: rgba(255, 255, 255, 0.1);
+    color: #d4d4d4;
+    border: 1px solid #3e3e42;
+    padding: 10px 20px;
+    border-radius: 8px;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.3s ease;
+}
+
+.btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.15);
+    color: #ffffff;
+    border-color: #4ec9b0;
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+    .plan-calendar-view {
+        padding: 15px;
+    }
+    
+    .calendar-header {
+        padding: 20px;
+    }
+    
+    .plan-title {
+        font-size: 2rem;
+    }
+    
+    .header-meta {
+        gap: 15px;
+    }
+    
+    .calendar-day {
+        min-height: 120px;
+        padding: 8px 6px;
+    }
+    
+    .assignment-item {
+        padding: 6px 8px;
+    }
+    
+    .duty-name {
+        font-size: 0.75rem;
+    }
+    
+    .unit-name {
+        font-size: 0.7rem;
+    }
+    
+    .calendar-legend {
+        flex-direction: column;
+        gap: 10px;
+        align-items: center;
+    }
+}
+
+/* Анимации */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.calendar-header {
+    animation: fadeInUp 0.6s ease-out;
+}
+
+.calendar-main {
+    animation: fadeInUp 0.8s ease-out;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateX(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.assignment-item {
+    animation: slideIn 0.3s ease-out;
+}
+</style>
+{% endblock %}
+
+{% block account_content %}
+<div class="plan-calendar-view">
+    <!-- Хедер плана -->
+    <div class="calendar-header">
+        <div class="header-content">
+            <h1 class="plan-title">{{ plan.month|date:"F Y" }}</h1>
+            <p class="plan-subtitle">Календарь распределения нарядов по подразделениям</p>
+            
+            <div class="header-meta">
+                <div class="meta-item">
+                    <span class="meta-icon">📅</span>
+                    <span>Создан {{ plan.created_at|date:"d.m.Y" }}</span>
+                </div>
+                <div class="meta-item">
+                    <span class="meta-icon">🎯</span>
+                    <span>{{ plan.duties.count }} нарядов</span>
+                </div>
+                <div class="meta-item">
+                    <span class="meta-icon">🏢</span>
+                    <span>{{ unit_stats|length|default:"0" }} подразделений</span>
+                </div>
+                <div class="meta-item">
+                    <span class="meta-icon">⚡</span>
+                    <span class="status-badge">
+                        {% if plan.is_generated %}Активен{% else %}Черновик{% endif %}
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Основной календарь -->
+    <div class="calendar-main">
+        <div class="calendar-controls">
+            <h2 class="calendar-title">
+                <span>📅</span>
+                Календарь распределения
+            </h2>
+            <div class="calendar-actions">
+                <a href="{% url 'commandant:plan_list' %}" class="btn-secondary">
+                    <i class="fas fa-arrow-left"></i>
+                    К списку
+                </a>
+                <a href="{% url 'commandant:duty_plan' %}?year={{ plan.month.year }}&month={{ plan.month.month }}" 
+                   class="btn-primary">
+                    <i class="fas fa-edit"></i>
+                    Редактировать
+                </a>
+            </div>
+        </div>
+
+        {% if calendar_weeks %}
+        <!-- Сетка календаря -->
+        <div class="calendar-grid">
+            <!-- Заголовки дней недели -->
+            <div class="day-header">Понедельник</div>
+            <div class="day-header">Вторник</div>
+            <div class="day-header">Среда</div>
+            <div class="day-header">Четверг</div>
+            <div class="day-header">Пятница</div>
+            <div class="day-header">Суббота</div>
+            <div class="day-header">Воскресенье</div>
+            
+            <!-- Дни месяца -->
+            {% for week in calendar_weeks %}
+                {% for day_data in week %}
+                <div class="calendar-day {% if not day_data.day %}empty{% endif %} {% if day_data.is_today %}today{% endif %}">
+                    {% if day_data.day %}
+                    <div class="day-number">{{ day_data.day }}</div>
+                    <div class="day-assignments">
+                        {% for schedule in day_data.schedules %}
+                        <div class="assignment-item 
+                            {% if schedule.duty.assigned_faculty or schedule.duty.assigned_department %}fixed{% endif %}
+                            {% if schedule.is_manually_assigned %}manual{% endif %}"
+                            onclick="openQuickUnitModal({{ schedule.id }}, '{{ schedule.duty.duty_name|escapejs }}')">
+                            <div class="duty-name">{{ schedule.duty.duty_name }}</div>
+                            <div class="unit-name {% if schedule.is_manually_assigned %}changed{% endif %}">
+                                {% if schedule.assigned_faculty %}
+                                    🏢 {{ schedule.assigned_faculty.name }}
+                                {% elif schedule.assigned_department %}
+                                    🏛️ {{ schedule.assigned_department.name }}
+                                {% else %}
+                                    ❓ Не назначено
+                                {% endif %}
+                                {% if schedule.is_manually_assigned %} ✎{% endif %}
+                            </div>
+                            <div class="click-hint">✏️</div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            {% endfor %}
+        </div>
+
+        <!-- Легенда -->
+        <div class="calendar-legend">
+            <div class="legend-item">
+                <div class="legend-color legend-fixed"></div>
+                <span>Закрепленные наряды</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color legend-rotating"></div>
+                <span>Ротационные наряды</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color legend-manual"></div>
+                <span>Ручные назначения</span>
+            </div>
+        </div>
+
+        {% else %}
+        <!-- Пустой календарь -->
+        <div class="empty-calendar">
+            <div class="empty-icon">📅</div>
+            <h3 class="empty-title">Календарь пуст</h3>
+            <p class="empty-text">График нарядов еще не сгенерирован для этого месяца</p>
+            <a href="{% url 'commandant:duty_plan' %}?year={{ plan.month.year }}&month={{ plan.month.month }}" 
+               class="btn-primary">
+                <i class="fas fa-cogs"></i>
+                Сгенерировать график
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Модальное окно для редактирования -->
+<div id="quickUnitModal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>✏️ Изменить назначение</h3>
+            <span class="close quick-close">&times;</span>
+        </div>
+        <div class="modal-body">
+            <input type="hidden" id="quickScheduleId">
+            <div class="quick-duty-info">
+                <strong id="quickDutyName"></strong>
+            </div>
+            <div style="margin-top: 20px;">
+                <h4 style="color: #4ec9b0; margin-bottom: 15px;">Выберите подразделение:</h4>
+                <div style="display: grid; grid-template-columns: 1fr; gap: 8px; max-height: 300px; overflow-y: auto;">
+                    {% for faculty in faculties %}
+                    <div class="unit-item" data-type="faculty" data-id="{{ faculty.id }}" 
+                         onclick="updateAssignment('faculty', {{ faculty.id }}, '{{ faculty.name }}')">
+                        🏢 Факультет: {{ faculty.name }}
+                    </div>
+                    {% endfor %}
+                    {% for department in independent_departments %}
+                    <div class="unit-item" data-type="department" data-id="{{ department.id }}"
+                         onclick="updateAssignment('department', {{ department.id }}, '{{ department.name }}')">
+                        🏛️ Кафедра: {{ department.name }}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn-secondary" onclick="closeQuickModal()" style="margin-right: 10px;">
+                Отмена
+            </button>
+            <button type="button" class="btn-primary" onclick="removeAssignment()">
+                🗑️ Снять назначение
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+// Функции для модального окна
+function openQuickUnitModal(scheduleId, dutyName) {
+    document.getElementById('quickScheduleId').value = scheduleId;
+    document.getElementById('quickDutyName').textContent = dutyName;
+    document.getElementById('quickUnitModal').style.display = 'block';
+}
+
+function closeQuickModal() {
+    document.getElementById('quickUnitModal').style.display = 'none';
+}
+
+function updateAssignment(unitType, unitId, unitName) {
+    const scheduleId = document.getElementById('quickScheduleId').value;
+    const formData = new FormData();
+    formData.append('unit_type', unitType);
+    formData.append('unit_id', unitId);
+    formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+    
+    fetch(`/commandant/schedules/${scheduleId}/update/`, {
+        method: 'POST',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRFToken': '{{ csrf_token }}'
+        },
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('Ошибка при обновлении: ' + data.error);
+        }
+    })
+    .catch(error => {
+        alert('Ошибка: ' + error.message);
+    });
+}
+
+function removeAssignment() {
+    const scheduleId = document.getElementById('quickScheduleId').value;
+    const formData = new FormData();
+    formData.append('unit_type', '');
+    formData.append('unit_id', '');
+    formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+    
+    fetch(`/commandant/schedules/${scheduleId}/update/`, {
+        method: 'POST',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRFToken': '{{ csrf_token }}'
+        },
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('Ошибка при снятии назначения: ' + data.error);
+        }
+    })
+    .catch(error => {
+        alert('Ошибка: ' + error.message);
+    });
+}
+
+// Закрытие модального окна
+document.querySelector('.quick-close').addEventListener('click', closeQuickModal);
+window.addEventListener('click', function(event) {
+    if (event.target === document.getElementById('quickUnitModal')) {
+        closeQuickModal();
+    }
+});
+
+// Стили для модального окна
+const style = document.createElement('style');
+style.textContent = `
+.modal {
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.5);
+    display: none;
+}
+
+.modal-content {
+    background-color: #252526;
+    margin: 10% auto;
+    padding: 0;
+    border-radius: 16px;
+    width: 500px;
+    max-width: 90%;
+    border: 1px solid #3e3e42;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 25px;
+    border-bottom: 1px solid #3e3e42;
+}
+
+.modal-header h3 {
+    margin: 0;
+    color: #ffffff;
+    font-size: 1.3rem;
+}
+
+.close {
+    color: #888;
+    font-size: 24px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: color 0.3s ease;
+}
+
+.close:hover {
+    color: #ffffff;
+}
+
+.modal-body {
+    padding: 25px;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.modal-footer {
+    padding: 20px 25px;
+    border-top: 1px solid #3e3e42;
+    text-align: right;
+}
+
+.unit-item {
+    padding: 12px 15px;
+    background: #2d2d30;
+    border: 1px solid #3e3e42;
+    border-radius: 8px;
+    cursor: pointer;
+    color: #d4d4d4;
+    transition: all 0.3s ease;
+    font-size: 0.9rem;
+}
+
+.unit-item:hover {
+    background: #4ec9b0;
+    color: #1e1e1e;
+    border-color: #4ec9b0;
+    transform: translateX(5px);
+}
+
+.quick-duty-info {
+    background: #2d2d30;
+    padding: 15px;
+    border-radius: 10px;
+    text-align: center;
+    margin-bottom: 20px;
+    color: #ffffff;
+    font-size: 1.1rem;
+    border: 1px solid #3e3e42;
+}
+`;
+document.head.appendChild(style);
+</script>
+{% endblock %}

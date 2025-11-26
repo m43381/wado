@@ -1,10 +1,11 @@
+# weekday_filters.py
 from django import template
 
 register = template.Library()
 
 @register.filter
-def weekday_display(weekday):
-    """Преобразует номер дня недели в читаемое название"""
+def weekday_display(value):
+    """Отображает день недели по его номеру"""
     weekdays = {
         '0': 'Понедельник',
         '1': 'Вторник', 
@@ -16,9 +17,9 @@ def weekday_display(weekday):
         'Понедельник': 'Понедельник',
         'Вторник': 'Вторник',
         'Среда': 'Среда',
-        'Четверг': 'Четверг', 
+        'Четверг': 'Четверг',
         'Пятница': 'Пятница',
         'Суббота': 'Суббота',
-        'Воскресенье': 'Воскресенье'
+        'Воскресенье': 'Воскресенье',
     }
-    return weekdays.get(str(weekday), str(weekday))
+    return weekdays.get(str(value), str(value))

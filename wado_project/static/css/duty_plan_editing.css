@@ -1,0 +1,676 @@
+/* Стили для редактирования записей */
+.clickable-duty {
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+}
+
+.clickable-duty:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+    background-color: #4a4a4a !important;
+    z-index: 10;
+}
+
+.clickable-duty.plan-fixed-duty:hover {
+    background-color: #3ab099 !important;
+}
+
+.click-hint {
+    position: absolute;
+    top: 50%;
+    right: 6px;
+    transform: translateY(-50%);
+    color: #4ec9b0;
+    font-size: 12px;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.clickable-duty:hover .click-hint {
+    opacity: 1;
+}
+
+
+.schedule-actions {
+    margin-top: 5px;
+}
+
+/* Обновленные стили для кнопки замены */
+.btn-change {
+    background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
+    color: #1e1e1e;
+    border: none;
+    border-radius: 20px;
+    padding: 8px 16px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    box-shadow: 0 2px 8px rgba(255, 152, 0, 0.3);
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-change::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.5s ease;
+}
+
+.btn-change:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(255, 152, 0, 0.5);
+}
+
+.btn-change:hover::before {
+    left: 100%;
+}
+
+.btn-change:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 8px rgba(255, 152, 0, 0.3);
+}
+
+.btn-change i {
+    font-size: 0.9rem;
+    transition: transform 0.3s ease;
+}
+
+.btn-change:hover i {
+    transform: rotate(90deg);
+}
+
+/* Альтернативный вариант с иконкой обновления */
+.btn-change-refresh {
+    background: linear-gradient(135deg, #4ec9b0 0%, #3aa794 100%);
+    color: #1e1e1e;
+    border: none;
+    border-radius: 20px;
+    padding: 8px 16px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    box-shadow: 0 2px 8px rgba(78, 201, 176, 0.3);
+}
+
+.btn-change-refresh:hover {
+    background: linear-gradient(135deg, #3aa794 0%, #4ec9b0 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(78, 201, 176, 0.5);
+}
+
+.btn-change-refresh:hover i {
+    animation: spin 0.6s ease;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Вариант с outline */
+.btn-change-outline {
+    background: transparent;
+    color: #4ec9b0;
+    border: 2px solid #4ec9b0;
+    border-radius: 20px;
+    padding: 6px 14px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.btn-change-outline:hover {
+    background: #4ec9b0;
+    color: #1e1e1e;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(78, 201, 176, 0.3);
+}
+
+/* Современный вариант с градиентным бордером */
+.btn-change-modern {
+    background: linear-gradient(#252526, #252526) padding-box,
+                linear-gradient(135deg, #4ec9b0, #569cd6) border-box;
+    color: #4ec9b0;
+    border: 2px solid transparent;
+    border-radius: 20px;
+    padding: 6px 14px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    position: relative;
+}
+
+.btn-change-modern:hover {
+    background: linear-gradient(135deg, #4ec9b0, #569cd6) padding-box,
+                linear-gradient(135deg, #4ec9b0, #569cd6) border-box;
+    color: #1e1e1e;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(78, 201, 176, 0.4);
+}
+
+/* Минималистичный вариант */
+.btn-change-minimal {
+    background: rgba(78, 201, 176, 0.1);
+    color: #4ec9b0;
+    border: 1px solid rgba(78, 201, 176, 0.3);
+    border-radius: 16px;
+    padding: 6px 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.btn-change-minimal:hover {
+    background: rgba(78, 201, 176, 0.2);
+    border-color: #4ec9b0;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(78, 201, 176, 0.2);
+}
+
+/* Модальные окна */
+.modal {
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.5);
+    display: none;
+}
+
+.modal-content {
+    background-color: #252526;
+    margin: 5% auto;
+    padding: 0;
+    border-radius: 8px;
+    width: 500px;
+    max-width: 90%;
+    max-height: 80vh;
+    overflow: hidden;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    border-bottom: 1px solid #3e3e42;
+}
+
+.modal-header h3 {
+    margin: 0;
+    color: #ffffff;
+}
+
+.close {
+    color: #aaa;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.close:hover {
+    color: #ffffff;
+}
+
+.modal-body {
+    padding: 20px;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.modal-footer {
+    padding: 20px;
+    border-top: 1px solid #3e3e42;
+    text-align: right;
+}
+
+.unit-selection h4 {
+    margin: 15px 0 10px 0;
+    color: #4ec9b0;
+}
+
+.unit-item {
+    padding: 10px 15px;
+    margin: 5px 0;
+    background-color: #2d2d30;
+    border: 1px solid #3e3e42;
+    border-radius: 4px;
+    cursor: pointer;
+    color: #ffffff;
+    transition: all 0.2s;
+}
+
+.unit-item:hover {
+    background-color: #4ec9b0;
+    color: #1e1e1e;
+}
+
+.unit-item.selected {
+    background-color: #4ec9b0;
+    color: #1e1e1e;
+    border-color: #4ec9b0;
+}
+
+.no-units {
+    color: #888;
+    font-style: italic;
+    padding: 10px;
+    text-align: center;
+}
+
+/* Быстрое модальное окно */
+.quick-duty-info {
+    background-color: #2d2d30;
+    padding: 10px;
+    border-radius: 4px;
+    margin-bottom: 15px;
+    text-align: center;
+}
+
+.quick-units-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-bottom: 15px;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.quick-unit-item {
+    padding: 8px 12px;
+    background-color: #2d2d30;
+    border: 1px solid #3e3e42;
+    border-radius: 4px;
+    cursor: pointer;
+    color: #ffffff;
+    text-align: center;
+    font-size: 12px;
+    transition: all 0.2s;
+    min-height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.quick-unit-item:hover {
+    background-color: #4ec9b0;
+    color: #1e1e1e;
+    border-color: #4ec9b0;
+}
+
+.full-selection-link {
+    text-align: center;
+    margin-top: 10px;
+}
+
+.full-selection-link a {
+    color: #4ec9b0;
+    text-decoration: none;
+    font-size: 12px;
+}
+
+.full-selection-link a:hover {
+    text-decoration: underline;
+}
+
+/* Анимация для обновления */
+.schedule-updated {
+    animation: highlightUpdate 1s ease-in-out;
+}
+
+@keyframes highlightUpdate {
+    0% { background-color: #4ec9b040; }
+    50% { background-color: #4ec9b080; }
+    100% { background-color: transparent; }
+}
+
+/* Стили для toast сообщений */
+.toast-message {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 12px 20px;
+    border-radius: 4px;
+    color: white;
+    z-index: 10000;
+    font-size: 14px;
+    max-width: 300px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    animation: slideIn 0.3s ease-out;
+}
+
+.toast-success {
+    background-color: #4ec9b0;
+}
+
+.toast-error {
+    background-color: #f44747;
+}
+
+.toast-warning {
+    background-color: #ffc107;
+    color: #1e1e1e;
+}
+
+.toast-info {
+    background-color: #007acc;
+}
+
+@keyframes slideIn {
+    from { transform: translateX(100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes slideOut {
+    from { transform: translateX(0); opacity: 1; }
+    to { transform: translateX(100%); opacity: 0; }
+}
+
+.badge-changed {
+    background-color: #ff9800;
+    color: #1e1e1e;
+}
+
+.assigned-unit.changed {
+    color: #ff9800;
+    font-weight: bold;
+}
+
+.manual-assignment {
+    border-right: 3px solid #ff9800;
+}
+/* Добавь в конец файла duty_plan_editing.css */
+
+.badge-changed {
+    background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
+    color: #1e1e1e;
+    box-shadow: 0 2px 8px rgba(255, 152, 0, 0.4);
+    padding: 8px 14px;
+    border-radius: 15px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    display: inline-block;
+}
+
+.plan-badge-fixed {
+    background: linear-gradient(135deg, #4ec9b0 0%, #3aa794 100%);
+    color: #1e1e1e;
+    box-shadow: 0 2px 8px rgba(78, 201, 176, 0.4);
+    padding: 8px 14px;
+    border-radius: 15px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    display: inline-block;
+}
+
+.plan-badge-rotating {
+    background: linear-gradient(135deg, #569cd6 0%, #4a86c7 100%);
+    color: white;
+    box-shadow: 0 2px 8px rgba(86, 156, 214, 0.4);
+    padding: 8px 14px;
+    border-radius: 15px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    display: inline-block;
+}
+
+.assigned-unit.changed {
+    color: #ff9800;
+    font-weight: 600;
+}
+
+.manual-assignment {
+    border-right: 3px solid #ff9800;
+    background: linear-gradient(135deg, rgba(255, 152, 0, 0.1) 0%, #2d2d30 100%);
+}
+
+/* Обновленные стили для hover состояний */
+.clickable-duty.manual-assignment:hover {
+    background: linear-gradient(135deg, rgba(255, 152, 0, 0.2) 0%, #4a4a4a 100%) !important;
+}
+
+.clickable-duty.plan-fixed-duty.manual-assignment:hover {
+    background: linear-gradient(135deg, rgba(255, 152, 0, 0.2) 0%, #3ab099 100%) !important;
+}
+
+/* Анимация для измененных записей */
+.schedule-updated.manual-assignment {
+    animation: highlightChanged 1s ease-in-out;
+}
+
+@keyframes highlightChanged {
+    0% { background-color: #ff980040; }
+    50% { background-color: #ff980080; }
+    100% { background-color: rgba(255, 152, 0, 0.1); }
+}
+/* Анимации переливания для всех типов записей в календаре */
+.clickable-duty {
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Базовые фоны для разных типов */
+.clickable-duty:not(.plan-fixed-duty):not(.manual-assignment) {
+    background: linear-gradient(135deg, #2d2d30 0%, #3e3e42 100%);
+}
+
+.clickable-duty.plan-fixed-duty {
+    background: linear-gradient(135deg, rgba(30, 58, 30, 0.3) 0%, #2d2d30 100%);
+}
+
+.clickable-duty.manual-assignment {
+    background: linear-gradient(135deg, rgba(255, 152, 0, 0.1) 0%, #2d2d30 100%);
+}
+
+/* Анимация переливания для ротирующихся нарядов */
+.clickable-duty:not(.plan-fixed-duty):not(.manual-assignment):hover {
+    background: linear-gradient(135deg, #2d2d30 0%, #3a3a3a 50%, #2d2d30 100%) !important;
+    background-size: 200% 200% !important;
+    animation: gradientShift 1.5s ease infinite !important;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(86, 156, 214, 0.3);
+    z-index: 10;
+}
+
+/* Анимация переливания для закрепленных нарядов - только граница */
+.clickable-duty.plan-fixed-duty:hover {
+    background: linear-gradient(135deg, rgba(30, 58, 30, 0.4) 0%, #2d2d30 50%, rgba(30, 58, 30, 0.4) 100%) !important;
+    background-size: 200% 200% !important;
+    animation: gradientShift 1.5s ease infinite !important;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(78, 201, 176, 0.3);
+    z-index: 10;
+}
+
+/* Анимация переливания для измененных вручную нарядов */
+.clickable-duty.manual-assignment:hover {
+    background: linear-gradient(135deg, rgba(255, 152, 0, 0.2) 0%, #2d2d30 50%, rgba(255, 152, 0, 0.2) 100%) !important;
+    background-size: 200% 200% !important;
+    animation: gradientShift 1.5s ease infinite !important;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(255, 152, 0, 0.3);
+    z-index: 10;
+}
+
+/* Комбинированные стили для закрепленных + измененных */
+.clickable-duty.plan-fixed-duty.manual-assignment:hover {
+    background: linear-gradient(135deg, rgba(30, 58, 30, 0.3) 0%, rgba(255, 152, 0, 0.2) 50%, rgba(30, 58, 30, 0.3) 100%) !important;
+    background-size: 200% 200% !important;
+    animation: gradientShift 1.5s ease infinite !important;
+}
+
+/* Анимация движения градиента */
+@keyframes gradientShift {
+    0% {
+        background-position: 0% 50%;
+    }
+    50% {
+        background-position: 100% 50%;
+    }
+    100% {
+        background-position: 0% 50%;
+    }
+}
+
+/* Улучшенные стили для подсказки */
+.click-hint {
+    position: absolute;
+    top: 50%;
+    right: 6px;
+    transform: translateY(-50%);
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 12px;
+    opacity: 0;
+    transition: all 0.3s ease;
+    background: rgba(0, 0, 0, 0.5);
+    padding: 2px 6px;
+    border-radius: 10px;
+    backdrop-filter: blur(5px);
+}
+
+.clickable-duty:hover .click-hint {
+    opacity: 1;
+    transform: translateY(-50%) scale(1.1);
+}
+
+/* Специфичные цвета для подсказок в зависимости от типа */
+.clickable-duty:not(.plan-fixed-duty):not(.manual-assignment):hover .click-hint {
+    background: rgba(86, 156, 214, 0.8);
+    color: white;
+}
+
+.clickable-duty.plan-fixed-duty:hover .click-hint {
+    background: rgba(78, 201, 176, 0.8);
+    color: #1e1e1e;
+}
+
+.clickable-duty.manual-assignment:hover .click-hint {
+    background: rgba(255, 152, 0, 0.8);
+    color: #1e1e1e;
+}
+
+/* Плавное появление текста при наведении */
+.clickable-duty:hover .plan-duty-name,
+.clickable-duty:hover .plan-assigned-unit {
+    transform: translateX(2px);
+    transition: transform 0.3s ease;
+}
+
+/* Эффект "пульсации" для привлечения внимания */
+@keyframes gentlePulse {
+    0% {
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    }
+    50% {
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+    }
+    100% {
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    }
+}
+
+.clickable-duty:hover {
+    animation: gentlePulse 2s ease-in-out infinite;
+}
+
+/* Градиентные границы при наведении */
+.clickable-duty::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border-radius: inherit;
+    padding: 1px;
+    background: linear-gradient(135deg, 
+        rgba(255, 255, 255, 0.1), 
+        rgba(255, 255, 255, 0.05), 
+        rgba(255, 255, 255, 0.1));
+    -webkit-mask: 
+        linear-gradient(#fff 0 0) content-box, 
+        linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.clickable-duty:hover::after {
+    opacity: 1;
+}
+
+/* Специфичные градиенты границ */
+.clickable-duty:not(.plan-fixed-duty):not(.manual-assignment):hover::after {
+    background: linear-gradient(135deg, 
+        rgba(86, 156, 214, 0.6), 
+        rgba(86, 156, 214, 0.3), 
+        rgba(86, 156, 214, 0.6));
+}
+
+.clickable-duty.plan-fixed-duty:hover::after {
+    background: linear-gradient(135deg, 
+        rgba(78, 201, 176, 0.6), 
+        rgba(78, 201, 176, 0.3), 
+        rgba(78, 201, 176, 0.6));
+}
+
+.clickable-duty.manual-assignment:hover::after {
+    background: linear-gradient(135deg, 
+        rgba(255, 152, 0, 0.6), 
+        rgba(255, 152, 0, 0.3), 
+        rgba(255, 152, 0, 0.6));
+}
+
+/* Усиление левой границы при наведении */
+.clickable-duty:hover {
+    border-left-width: 6px !important;
+}
+
+.clickable-duty:not(.plan-fixed-duty):not(.manual-assignment):hover {
+    border-left-color: #569cd6 !important;
+}
+
+.clickable-duty.plan-fixed-duty:hover {
+    border-left-color: #4ec9b0 !important;
+}
+
+.clickable-duty.manual-assignment:hover {
+    border-left-color: #ff9800 !important;
+}

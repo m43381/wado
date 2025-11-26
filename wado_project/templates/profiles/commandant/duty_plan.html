@@ -1,13 +1,15 @@
 {% extends "base_account.html" %}
 {% load static %}
 {% load dict_filters %}
-{% load weekday_filters %}  {# ДОБАВЬТЕ ЭТУ СТРОКУ #}
+{% load weekday_filters %}
+{% load custom_filters %}
 
 {% block title %}План нарядов на {{ current_date|date:"F Y" }}{% endblock %}
 
 {% block extra_head %}
-<link rel="stylesheet" href="{% static 'css/duty_plan.css' %}">
+<link rel="stylesheet" href="{% static 'css/commandant_duty_plan.css' %}">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<link rel="stylesheet" href="{% static 'css/duty_plan_editing.css' %}">
 {% endblock %}
 
 {% block account_content %}
@@ -15,7 +17,6 @@
     <!-- Заголовок и навигация -->
     <div class="plan-header">
         <h1>План нарядов на <span class="month-highlight">{{ current_date|date:"F Y" }}</span></h1>
-        
         <div class="month-navigation">
             <a href="?year={{ prev_month.year }}&month={{ prev_month.month }}" class="btn btn-secondary">
                 <i class="fas fa-chevron-left"></i> {{ prev_month|date:"F Y" }}
@@ -46,7 +47,7 @@
                             {% csrf_token %}
                             <input type="hidden" name="year" value="{{ current_date.year }}">
                             <input type="hidden" name="month" value="{{ current_date.month }}">
-                            <button type="submit" class="btn btn-danger btn-sm" 
+                            <button type="submit" class="btn btn-danger btn-sm"
                                     onclick="return confirm('Вы уверены, что хотите сбросить график? Все назначения будут удалены.')">
                                 <i class="fas fa-trash"></i> Сбросить график
                             </button>
@@ -55,8 +56,22 @@
                 </div>
             {% else %}
                 <div class="alert alert-warning">
-                    <i class="fas fa-exclamation-triangle"></i>
-                    План создан, но график не сгенерирован
+                    <div class="status-content">
+                        <div>
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <strong>План создан, но график не сгенерирован</strong>
+                        </div>
+                        <!-- Показываем ту же кнопку, но с другим текстом -->
+                        <form method="post" action="{% url 'commandant:reset_duty_plan' %}" class="reset-form">
+                            {% csrf_token %}
+                            <input type="hidden" name="year" value="{{ current_date.year }}">
+                            <input type="hidden" name="month" value="{{ current_date.month }}">
+                            <button type="submit" class="btn btn-danger btn-sm"
+                                    onclick="return confirm('Вы уверены, что хотите сбросить план? Все настройки будут удалены.')">
+                                <i class="fas fa-trash"></i> Сбросить план
+                            </button>
+                        </form>
+                    </div>
                 </div>
             {% endif %}
         {% else %}
@@ -67,169 +82,250 @@
         {% endif %}
     </div>
 
-
     <!-- Панель управления -->
     <div class="control-panel">
         <div class="duty-selection">
             <h3>Настройка плана на <span class="month-highlight">{{ current_date|date:"F Y" }}</span></h3>
-            
             <div class="plan-info">
-                <p>Выберите наряды и настройте их расписание для генерации графика</p>
+                <p>Выберите наряды, подразделения для распределения и настройте расписание для генерации графика</p>
             </div>
-            
-            <div class="duty-list">
-                {% for duty in duties %}
-                <div class="duty-item" data-duty-id="{{ duty.id }}">
-                    <div class="duty-info">
-                        <input type="checkbox" name="selected_duties" value="{{ duty.id }}" 
-                               id="duty_{{ duty.id }}" class="duty-checkbox"
-                               {% if monthly_plan and duty in monthly_plan.duties.all %}checked{% endif %}>
-                        <label for="duty_{{ duty.id }}" class="duty-label">
-                            <strong>{{ duty.duty_name }}</strong>
-                            <span class="duty-meta">({{ duty.people_count }} чел.)</span>
-                            {% if duty.assigned_faculty %}
-                                <span class="badge badge-fixed">Ф: {{ duty.assigned_faculty.name }}</span>
-                            {% elif duty.assigned_department %}
-                                <span class="badge badge-fixed">К: {{ duty.assigned_department.name }}</span>
-                            {% endif %}
-                        </label>
-                    </div>
-                    
-                    <!-- Настройки расписания для наряда -->
-                    <div class="schedule-settings">
-                        {% with duty_schedule=duty_schedules|get_item:duty.id %}
-                        <form method="post" class="schedule-form" data-duty-id="{{ duty.id }}">
-                            {% csrf_token %}
-                            <input type="hidden" name="duty_id" value="{{ duty.id }}">
-                            
-                            <!-- Визуальное отображение выбранных опций -->
-                            <div class="selected-options">
-                                <h4>Выбранные параметры:</h4>
-                                <div class="options-tags" id="tags-{{ duty.id }}">
-                                    {% with duty_schedule=duty_schedules|get_item:duty.id %}
-                                        {% if duty_schedule.ranges or duty_schedule.specific_dates or duty_schedule.weekdays %}
-                                            {% if duty_schedule.ranges %}
-                                                {% for range in duty_schedule.ranges %}
-                                                <span class="option-tag range-tag">
-                                                    <i class="fas fa-calendar-day"></i>
-                                                    {{ range }}
-                                                    <button type="button" class="remove-tag" data-type="range" data-value="{{ range }}">&times;</button>
-                                                </span>
-                                                {% endfor %}
-                                            {% endif %}
-                                            
-                                            {% if duty_schedule.specific_dates %}
-                                                {% for date in duty_schedule.specific_dates %}
-                                                <span class="option-tag date-tag">
-                                                    <i class="fas fa-calendar-check"></i>
-                                                    {{ date }}
-                                                    <button type="button" class="remove-tag" data-type="date" data-value="{{ date }}">&times;</button>
-                                                </span>
-                                                {% endfor %}
-                                            {% endif %}
-                                            
-                                            {% if duty_schedule.weekdays %}
-                                                {% for weekday in duty_schedule.weekdays %}
-                                                <span class="option-tag weekday-tag">
-                                                    <i class="fas fa-calendar-week"></i>
-                                                    {{ weekday|weekday_display }}
-                                                    <button type="button" class="remove-tag" data-type="weekday" data-value="{{ weekday }}">&times;</button>
-                                                </span>
-                                                {% endfor %}
-                                            {% endif %}
-                                        {% else %}
-                                            <span class="option-tag default-tag">
-                                                <i class="fas fa-calendar-alt"></i>
-                                                Весь месяц
-                                                <span class="tag-hint">(по умолчанию)</span>
-                                            </span>
-                                        {% endif %}
-                                    {% endwith %}
-                                </div>
-                            </div>
 
-                            <!-- Форма добавления новых параметров -->
-                            <div class="add-options">
-                                <h4>Добавить параметры:</h4>
-                                
-                                <!-- Диапазон дат -->
-                                <div class="option-group">
-                                    <label>Диапазон дат:</label>
-                                    <div class="input-group">
-                                        <input type="text" class="form-control range-input" 
-                                               placeholder="Выберите диапазон дат" data-duty-id="{{ duty.id }}">
-                                        <button type="button" class="btn btn-outline-primary add-range" data-duty-id="{{ duty.id }}">
-                                            <i class="fas fa-plus"></i> Добавить
-                                        </button>
-                                    </div>
-                                </div>
-                                
-                                <!-- Конкретные дни -->
-                                <div class="option-group">
-                                    <label>Конкретные дни:</label>
-                                    <div class="input-group">
-                                        <input type="text" class="form-control dates-input" 
-                                               placeholder="Выберите дни" data-duty-id="{{ duty.id }}">
-                                        <button type="button" class="btn btn-outline-primary add-dates" data-duty-id="{{ duty.id }}">
-                                            <i class="fas fa-plus"></i> Добавить
-                                        </button>
-                                    </div>
-                                </div>
-                                
-                                <!-- Дни недели -->
-                                <div class="option-group">
-                                    <label>Дни недели:</label>
-                                    <div class="weekdays-selector">
-                                        {% for day_name in schedule_form.weekdays.field.choices %}
-                                        <label class="weekday-checkbox">
-                                            <input type="checkbox" value="{{ day_name.0 }}" data-duty-id="{{ duty.id }}">
-                                            <span>{{ day_name.1 }}</span>
-                                        </label>
-                                        {% endfor %}
-                                        <button type="button" class="btn btn-outline-primary add-weekdays" data-duty-id="{{ duty.id }}">
-                                            <i class="fas fa-plus"></i> Добавить выбранные
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <!-- Скрытые поля для отправки -->
-                            <div class="hidden-fields">
-                                {% if duty_schedule.ranges %}
-                                    {% for range in duty_schedule.ranges %}
-                                    <input type="hidden" name="ranges[]" value="{{ range }}">
-                                    {% endfor %}
-                                {% endif %}
-                                {% if duty_schedule.specific_dates %}
-                                    {% for date in duty_schedule.specific_dates %}
-                                    <input type="hidden" name="specific_dates[]" value="{{ date }}">
-                                    {% endfor %}
-                                {% endif %}
-                                {% if duty_schedule.weekdays %}
-                                    {% for weekday in duty_schedule.weekdays %}
-                                    <input type="hidden" name="weekdays[]" value="{{ weekday }}">
-                                    {% endfor %}
-                                {% endif %}
-                            </div>
-                            
-                            <div class="form-actions">
-                                <button type="button" class="btn btn-secondary clear-all" data-duty-id="{{ duty.id }}">
-                                    <i class="fas fa-times"></i> Очистить все
-                                </button>
-                            </div>
-                        </form>
-                        {% endwith %}
+            <!-- БЛОК ВЫБОРА ПОДРАЗДЕЛЕНИЙ -->
+            <div class="unit-selection-section">
+                <h4>Подразделения для распределения нарядов</h4>
+                <div class="unit-selection-controls">
+                    <div class="selection-actions">
+                        <button type="button" id="select-all-units" class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-check-square"></i> Выбрать все
+                        </button>
+                        <button type="button" id="deselect-all-units" class="btn btn-outline-secondary btn-sm">
+                            <i class="fas fa-square"></i> Снять выделение
+                        </button>
+                    </div>
+                    <div class="selection-stats">
+                        <span id="selected-units-count">0</span> подразделений выбрано
                     </div>
                 </div>
-                {% endfor %}
+                <div class="units-grid">
+                    <!-- Факультеты -->
+                    <div class="units-category">
+                        <h5>Факультеты ({{ faculties|length }})</h5>
+                        <div class="units-list" id="faculties-list">
+                            {% for faculty in faculties %}
+                            <label class="unit-checkbox">
+                                <input type="checkbox" name="selected_units" value="faculty_{{ faculty.id }}" 
+                                    data-type="faculty" data-id="{{ faculty.id }}" class="unit-checkbox-input"
+                                    {% if faculty.id|stringformat:"i" in selected_units_list or "faculty_"|add:faculty.id|stringformat:"i" in selected_units_list %}checked{% endif %}>
+                                <span class="unit-name">{{ faculty.name }}</span>
+                                <span class="unit-staff-count">{{ faculty.staff_count }} чел.</span>
+                            </label>
+                            {% empty %}
+                            <div class="no-units">Нет доступных факультетов</div>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <!-- Кафедры без факультета -->
+                    <div class="units-category">
+                        <h5>Отдельные кафедры ({{ independent_departments|length }})</h5>
+                        <div class="units-list" id="departments-list">
+                            {% for department in independent_departments %}
+                            <label class="unit-checkbox">
+                                <input type="checkbox" name="selected_units" value="department_{{ department.id }}" 
+                                    data-type="department" data-id="{{ department.id }}" class="unit-checkbox-input"
+                                    {% if department.id|stringformat:"i" in selected_units_list or "department_"|add:department.id|stringformat:"i" in selected_units_list %}checked{% endif %}>
+                                <span class="unit-name">{{ department.name }}</span>
+                                <span class="unit-staff-count">{{ department.staff_count }} чел.</span>
+                            </label>
+                            {% empty %}
+                            <div class="no-units">Нет отдельных кафедр</div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
             </div>
-            
-            <div class="generate-section">
-                <button id="generate-plan-btn" class="btn btn-success btn-lg">
+
+            <!-- Список нарядов -->
+            <div class="plan-duties-section">
+                <h4>Выберите наряды для планирования</h4>
+                <div class="plan-duties-list">
+                    {% for duty in duties %}
+                    <div class="plan-duty-card" data-duty-id="{{ duty.id }}">
+                        <div class="plan-duty-header">
+                            <input type="checkbox" name="selected_duties" value="{{ duty.id }}" 
+                                   id="plan_duty_{{ duty.id }}" class="plan-duty-check"
+                                   {% if monthly_plan and duty in monthly_plan.duties.all %}checked{% endif %}>
+                            <div class="plan-duty-content">
+                                <div class="plan-duty-main-info">
+                                    <label for="plan_duty_{{ duty.id }}" class="plan-duty-name">
+                                        {{ duty.duty_name }}
+                                    </label>
+                                    <div class="plan-duty-meta">
+                                        <span class="plan-duty-count">{{ duty.people_count }} чел.</span>
+                                        {% if duty.assigned_faculty %}
+                                            <span class="plan-duty-badge badge-fixed">Ф: {{ duty.assigned_faculty.name }}</span>
+                                        {% elif duty.assigned_department %}
+                                            <span class="plan-duty-badge badge-fixed">К: {{ duty.assigned_department.name }}</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <span class="plan-expand-indicator">
+                                    <i class="fas fa-chevron-down"></i> Настройки
+                                </span>
+                            </div>
+                        </div>
+
+                        <!-- Настройки расписания -->
+                        <div class="plan-schedule-settings" style="display: none;">
+                            <div class="plan-schedule-container" data-duty-id="{{ duty.id }}">
+                                {% csrf_token %}
+                                
+                                <!-- Визуальные теги -->
+                                <div class="plan-selected-options">
+                                    <h5>Выбранные параметры:</h5>
+                                    <!-- В шаблоне duty_plan.html - исправляем отображение дней недели -->
+                                    <!-- В шаблоне duty_plan.html - исправляем отображение тегов -->
+                                    <div class="plan-options-tags" id="plan-tags-{{ duty.id }}">
+                                        {% with duty_schedule=duty_schedules|get_item:duty.id %}
+                                            {% if duty_schedule.ranges or duty_schedule.specific_dates or duty_schedule.weekdays %}
+                                                {% if duty_schedule.ranges %}
+                                                    {% for range in duty_schedule.ranges %}
+                                                    <span class="plan-option-tag plan-range-tag">
+                                                        <i class="fas fa-calendar-day"></i>
+                                                        {{ range }}
+                                                        <button type="button" class="plan-remove-tag" data-type="range" data-value="{{ range }}">&times;</button>
+                                                    </span>
+                                                    {% endfor %}
+                                                {% endif %}
+                                                {% if duty_schedule.specific_dates %}
+                                                    {% for date in duty_schedule.specific_dates %}
+                                                    <span class="plan-option-tag plan-date-tag">
+                                                        <i class="fas fa-calendar-check"></i>
+                                                        {{ date }}
+                                                        <button type="button" class="plan-remove-tag" data-type="date" data-value="{{ date }}">&times;</button>
+                                                    </span>
+                                                    {% endfor %}
+                                                {% endif %}
+                                                {% if duty_schedule.weekdays %}
+                                                    {% for weekday in duty_schedule.weekdays %}
+                                                    <span class="plan-option-tag plan-weekday-tag">
+                                                        <i class="fas fa-calendar-week"></i>
+                                                        {{ weekday }}
+                                                        <button type="button" class="plan-remove-tag" data-type="weekday" data-value="{{ weekday }}">&times;</button>
+                                                    </span>
+                                                    {% endfor %}
+                                                {% endif %}
+                                            {% else %}
+                                                <span class="plan-option-tag plan-default-tag">
+                                                    <i class="fas fa-calendar-alt"></i>
+                                                    Весь месяц
+                                                    <span class="plan-tag-hint">(по умолчанию)</span>
+                                                </span>
+                                            {% endif %}
+                                        {% endwith %}
+                                    </div>
+                                </div>
+
+                                <!-- Форма добавления параметров -->
+                                <div class="plan-add-options">
+                                    <h5>Добавить параметры:</h5>
+                                    
+                                    <!-- Диапазон дат -->
+                                    <div class="plan-option-group">
+                                        <label>Диапазон дат:</label>
+                                        <div class="plan-input-group">
+                                            <input type="text" class="form-control plan-range-input" 
+                                                placeholder="дд.мм.гггг по дд.мм.гггг" 
+                                                data-duty-id="{{ duty.id }}"
+                                                data-range-selector
+                                                title="Формат: дд.мм.гггг по дд.мм.гггг"
+                                                style="display: none;"> <!-- Скрываем старое поле -->
+                                            <!-- Новые поля будут добавлены через JavaScript -->
+                                        </div>
+                                        <small class="form-text text-muted">Выберите начальную и конечную даты</small>
+                                    </div>
+                                    
+                                    <!-- Конкретные дни -->
+                                    <div class="plan-option-group">
+                                        <label>Конкретные дни:</label>
+                                        <div class="plan-input-group">
+                                            <input type="text" class="form-control plan-dates-input" 
+                                                   placeholder="Выберите дни" 
+                                                   data-duty-id="{{ duty.id }}"
+                                                   data-dates-selector>
+                                            <button type="button" class="btn btn-outline-primary btn-sm plan-add-dates" 
+                                                    data-duty-id="{{ duty.id }}">
+                                                <i class="fas fa-plus"></i> Добавить
+                                            </button>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Дни недели -->
+                                    <div class="plan-option-group">
+                                        <label>Дни недели:</label>
+                                        <div class="plan-weekdays-selector">
+                                            <div class="plan-weekdays-grid">
+                                                {% for day_num, day_name in schedule_form.weekdays.field.choices %}
+                                                <label class="plan-weekday-checkbox">
+                                                    <input type="checkbox" value="{{ day_num }}" 
+                                                           data-duty-id="{{ duty.id }}"
+                                                           class="weekday-checkbox">
+                                                    <span>{{ day_name }}</span>
+                                                </label>
+                                                {% endfor %}
+                                            </div>
+                                            <button type="button" class="btn btn-outline-primary btn-sm plan-add-weekdays" 
+                                                    data-duty-id="{{ duty.id }}">
+                                                <i class="fas fa-plus"></i> Добавить выбранные
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Скрытые поля для данных -->
+                                <div class="plan-hidden-fields" data-duty-id="{{ duty.id }}" style="display: none;">
+                                    <!-- Динамически будут добавляться поля -->
+                                </div>
+                                
+
+                                <div class="plan-form-actions">
+                                    <button type="button" class="btn btn-secondary btn-sm plan-clear-all" 
+                                            data-duty-id="{{ duty.id }}">
+                                        <i class="fas fa-times"></i> Очистить все
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Скрытые поля для формы -->
+            <div class="plan-hidden-fields-container">
+                <input type="hidden" id="plan-selected-units" name="selected_units">
+                <input type="hidden" id="plan-selected-duties" name="selected_duties">
+            </div>
+
+            <!-- Кнопка генерации -->
+            <div class="plan-generate-section">
+                <div class="plan-generate-validation" id="plan-generate-validation">
+                    <div class="plan-validation-item" id="plan-validation-units">
+                        <i class="fas fa-times-circle"></i>
+                        <span>Выберите подразделения для распределения</span>
+                    </div>
+                    <div class="plan-validation-item" id="plan-validation-duties">
+                        <i class="fas fa-times-circle"></i>
+                        <span>Выберите наряды для планирования</span>
+                    </div>
+                </div>
+                
+                <button type="button" id="plan-generate-btn" class="btn btn-success btn-lg" disabled>
                     <i class="fas fa-cogs"></i> Сгенерировать график на {{ current_date|date:"F Y" }}
                 </button>
-                <p class="generate-hint">
-                    Будет создан график распределения нарядов между подразделениями
+                
+                <p class="plan-generate-hint">
+                    Будет создан график распределения выбранных нарядов между выбранными подразделениями
                 </p>
             </div>
         </div>
@@ -237,51 +333,70 @@
 
     <!-- Статистика -->
     {% if unit_stats %}
-    <div class="statistics-section">
+    <div class="plan-statistics-section">
         <h3>Статистика распределения</h3>
-        <div class="stats-grid">
-            {% for stat in unit_stats.values %}
-            <div class="stat-card">
-                <div class="stat-name">{{ stat.name }}</div>
-                <div class="stat-count">{{ stat.count }} нарядов</div>
-                <div class="stat-duties">
+        <div class="plan-stats-grid">
+            {% for unit_id, stat in unit_stats.items %}
+            {% if 'faculty' in unit_id %}
+            <div class="plan-stat-card" 
+                data-unit-type="faculty" 
+                data-unit-id="{{ unit_id|cut:'faculty_' }}"
+                data-unit-name="Факультет {{ stat.name }}">
+                <div class="plan-stat-name">Факультет {{ stat.name }}</div>
+                <div class="plan-stat-count">{{ stat.count }} наряд{{ stat.count|ru_plural:"ы,ов" }}</div>
+                <div class="plan-stat-duties">
                     {% for duty in stat.duties %}
-                    <span class="duty-tag">{{ duty }}</span>
+                    <span class="plan-duty-tag">{{ duty }}</span>
                     {% endfor %}
                 </div>
             </div>
+            {% elif 'department' in unit_id %}
+            <div class="plan-stat-card" 
+                data-unit-type="department" 
+                data-unit-id="{{ unit_id|cut:'department_' }}"
+                data-unit-name="Кафедра {{ stat.name }}">
+                <div class="plan-stat-name">Кафедра {{ stat.name }}</div>
+                <div class="plan-stat-count">{{ stat.count }} наряд{{ stat.count|ru_plural:"ы,ов" }}</div>
+                <div class="plan-stat-duties">
+                    {% for duty in stat.duties %}
+                    <span class="plan-duty-tag">{{ duty }}</span>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
             {% endfor %}
         </div>
     </div>
     {% endif %}
 
-    <!-- Календарь с реальными данными -->
-    <div class="calendar-section">
+    <!-- Календарь с редактированием -->
+    <div class="plan-calendar-section">
         <h3>График нарядов на {{ current_date|date:"F Y" }}</h3>
-        
         {% if schedules %}
-        <div class="calendar-grid">
-            <div class="calendar-header">
-                <div class="day-header">Пн</div>
-                <div class="day-header">Вт</div>
-                <div class="day-header">Ср</div>
-                <div class="day-header">Чт</div>
-                <div class="day-header">Пт</div>
-                <div class="day-header">Сб</div>
-                <div class="day-header">Вс</div>
+        <div class="plan-calendar-grid">
+            <div class="plan-calendar-header">
+                <div class="plan-day-header">Пн</div>
+                <div class="plan-day-header">Вт</div>
+                <div class="plan-day-header">Ср</div>
+                <div class="plan-day-header">Чт</div>
+                <div class="plan-day-header">Пт</div>
+                <div class="plan-day-header">Сб</div>
+                <div class="plan-day-header">Вс</div>
             </div>
-            
             {% for week in calendar_weeks %}
-            <div class="calendar-week">
+            <div class="plan-calendar-week">
                 {% for day_data in week %}
-                <div class="calendar-day {% if not day_data.day %}empty{% endif %} {% if day_data.is_today %}today{% endif %}">
+                <div class="plan-calendar-day {% if not day_data.day %}plan-empty-day{% endif %} {% if day_data.is_today %}plan-today{% endif %}">
                     {% if day_data.day %}
-                    <div class="day-number">{{ day_data.day }}</div>
-                    <div class="day-schedules">
+                    <div class="plan-day-number">{{ day_data.day }}</div>
+                    <div class="plan-day-schedules">
                         {% for schedule in day_data.schedules %}
-                        <div class="duty-schedule {% if schedule.duty.assigned_faculty or schedule.duty.assigned_department %}fixed-duty{% endif %}">
-                            <div class="duty-name">{{ schedule.duty.duty_name }}</div>
-                            <div class="assigned-unit">
+                        <div class="plan-duty-schedule clickable-duty {% if schedule.duty.assigned_faculty or schedule.duty.assigned_department %}plan-fixed-duty{% endif %} {% if schedule.is_manually_assigned %}manual-assignment{% endif %}" 
+                            data-schedule-id="{{ schedule.id }}"
+                            data-duty-name="{{ schedule.duty.duty_name|escapejs }}"
+                            onclick="openQuickUnitModal({{ schedule.id }}, '{{ schedule.duty.duty_name|escapejs }}')">
+                            <div class="plan-duty-name">{{ schedule.duty.duty_name }}</div>
+                            <div class="plan-assigned-unit {% if schedule.is_manually_assigned %}changed{% endif %}">
                                 {% if schedule.assigned_faculty %}
                                     Ф: {{ schedule.assigned_faculty.name }}
                                 {% elif schedule.assigned_department %}
@@ -289,7 +404,9 @@
                                 {% else %}
                                     Не назначено
                                 {% endif %}
+                                {% if schedule.is_manually_assigned %} *{% endif %}
                             </div>
+                            <div class="click-hint">✎</div>
                         </div>
                         {% endfor %}
                     </div>
@@ -300,33 +417,36 @@
             {% endfor %}
         </div>
         {% else %}
-        <div class="empty-calendar">
+        <div class="plan-empty-calendar">
             <p>График нарядов еще не сгенерирован</p>
             <p>Настройте наряды и нажмите "Сгенерировать график"</p>
         </div>
         {% endif %}
     </div>
 
-    <!-- Таблица всех назначений -->
+    <!-- Таблица назначений с редактированием -->
     {% if schedules %}
-    <div class="schedules-table-section">
+    <div class="plan-schedules-section">
         <h3>Все назначенные наряды</h3>
-        <div class="table-responsive">
-            <table class="schedules-table">
+        <div class="plan-table-responsive">
+            <table class="plan-schedules-table">
                 <thead>
                     <tr>
                         <th>Дата</th>
                         <th>Наряд</th>
                         <th>Подразделение</th>
                         <th>Статус</th>
+                        <th>Действия</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for schedule in schedules %}
-                    <tr>
+                    <tr data-schedule-id="{{ schedule.id }}">
                         <td>{{ schedule.date|date:"d.m.Y" }}</td>
                         <td>{{ schedule.duty.duty_name }}</td>
-                        <td>
+                        <td class="unit-display" 
+                            data-unit-type="{% if schedule.assigned_faculty %}faculty{% elif schedule.assigned_department %}department{% endif %}"
+                            data-unit-id="{% if schedule.assigned_faculty %}{{ schedule.assigned_faculty.id }}{% elif schedule.assigned_department %}{{ schedule.assigned_department.id }}{% endif %}">
                             {% if schedule.assigned_faculty %}
                                 Факультет: {{ schedule.assigned_faculty.name }}
                             {% elif schedule.assigned_department %}
@@ -335,12 +455,21 @@
                                 Не назначено
                             {% endif %}
                         </td>
+                        <td class="assignment-type">
+                            {% with status=schedule.get_assignment_status %}
+                                {% if status == 'fixed' %}
+                                    <span class="plan-badge plan-badge-fixed">Закреплен</span>
+                                {% elif status == 'rotating' %}
+                                    <span class="plan-badge plan-badge-rotating">Ротация</span>
+                                {% elif status == 'changed' %}
+                                    <span class="plan-badge badge-changed">Изменен</span>
+                                {% endif %}
+                            {% endwith %}
+                        </td>
                         <td>
-                            {% if schedule.duty.assigned_faculty or schedule.duty.assigned_department %}
-                                <span class="badge badge-fixed">Закреплен</span>
-                            {% else %}
-                                <span class="badge badge-rotating">Ротация</span>
-                            {% endif %}
+                        <button class="btn-change-modern" onclick="event.stopPropagation(); openUnitModal({{ schedule.id }})">
+                                <i class="fas fa-sync-alt"></i> Изменить
+                            </button>
                         </td>
                     </tr>
                     {% endfor %}
@@ -350,10 +479,88 @@
     </div>
     {% endif %}
 </div>
+
+<!-- Быстрое модальное окно для календаря -->
+<div id="quickUnitModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Быстрая замена</h3>
+            <span class="close quick-close">&times;</span>
+        </div>
+        <div class="modal-body">
+            <input type="hidden" id="quickScheduleId">
+            <div class="quick-duty-info">
+                <strong id="quickDutyName"></strong>
+            </div>
+            <div class="quick-unit-selection">
+                <h4>Быстрый выбор</h4>
+                <div class="quick-units-grid" id="quickUnitsGrid">
+                    <!-- Будет заполнено JavaScript -->
+                </div>
+                <div class="full-selection-link">
+                    <a href="#" id="showFullSelection">Показать полный список подразделений</a>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" id="cancelQuickSelection">Отмена</button>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно для выбора подразделения -->
+<div id="unitSelectModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Выбор подразделения</h3>
+            <span class="close">&times;</span>
+        </div>
+        <div class="modal-body">
+            <input type="hidden" id="currentScheduleId">
+            <div class="unit-selection">
+                <h4>Факультеты</h4>
+                <div class="faculties-list" id="facultiesList">
+                    {% for faculty in faculties %}
+                    <div class="unit-item" data-type="faculty" data-id="{{ faculty.id }}">
+                        {{ faculty.name }}
+                    </div>
+                    {% empty %}
+                    <div class="no-units">Нет доступных факультетов</div>
+                    {% endfor %}
+                </div>
+                
+                <h4>Отдельные кафедры</h4>
+                <div class="departments-list" id="departmentsList">
+                    {% for department in independent_departments %}
+                    <div class="unit-item" data-type="department" data-id="{{ department.id }}">
+                        {{ department.name }}
+                    </div>
+                    {% empty %}
+                    <div class="no-units">Нет отдельных кафедр</div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" id="cancelSelection">Отмена</button>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block extra_script %}
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/ru.js"></script>
+
+<script>
+    // Глобальные переменные для URLs
+    const GENERATE_DUTY_PLAN_URL = "{% url 'commandant:generate_duty_plan' %}";
+    const UPDATE_SCHEDULE_URL = "{% url 'commandant:update_schedule' 0 %}".replace('/0/', '/');
+    const CURRENT_YEAR = {{ current_date.year }};
+    const CURRENT_MONTH = {{ current_date.month }};
+    const CSRF_TOKEN = "{{ csrf_token }}";
+</script>
+
 <script src="{% static 'js/duty_plan.js' %}"></script>
+{% comment %} <script src="{% static 'js/duty_plan_editing.js' %}"></script> {% endcomment %}
 {% endblock %}
