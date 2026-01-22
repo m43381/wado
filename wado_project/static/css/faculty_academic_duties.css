@@ -1,0 +1,474 @@
+/* static/css/faculty_academic_duties.css */
+
+/* Основные стили в темной теме */
+.faculty-duties-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+    background: #1e1e1e;
+    min-height: 100vh;
+    color: #f0f0f0;
+}
+
+/* Шапка */
+.duties-header {
+    background: linear-gradient(135deg, #252526 0%, #2d2d30 100%);
+    border-radius: 12px;
+    padding: 24px 32px;
+    margin-bottom: 24px;
+    border: 1px solid #3e3e42;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 20px;
+}
+
+.header-main h1 {
+    margin: 0 0 8px 0;
+    color: #ffffff;
+    font-size: 24px;
+    font-weight: 600;
+}
+
+.faculty-name {
+    color: #4ec9b0;
+    font-weight: 700;
+}
+
+.header-subtitle {
+    color: #888;
+    margin: 0;
+    font-size: 14px;
+}
+
+/* Переключение месяцев */
+.month-switcher {
+    display: flex;
+    align-items: center;
+    background: #2d2d30;
+    border: 1px solid #3e3e42;
+    border-radius: 8px;
+    padding: 4px;
+    min-width: 280px;
+}
+
+.month-btn {
+    padding: 8px 16px;
+    text-decoration: none;
+    color: #4ec9b0;
+    font-size: 14px;
+    font-weight: 500;
+    border-radius: 6px;
+    transition: all 0.2s;
+}
+
+.month-btn:hover {
+    background: rgba(78, 201, 176, 0.1);
+}
+
+.month-btn.prev {
+    border-right: 1px solid #3e3e42;
+}
+
+.month-btn.next {
+    border-left: 1px solid #3e3e42;
+}
+
+.current-month {
+    flex: 1;
+    text-align: center;
+    padding: 0 16px;
+}
+
+.month-name {
+    color: #f0f0f0;
+    font-weight: 600;
+    font-size: 15px;
+}
+
+/* Основная статистика - ОСТАВЛЯЕМ ТОЛЬКО НАРЯДЫ И ДНИ */
+.main-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    margin-bottom: 32px;
+}
+
+.stat-card {
+    background: linear-gradient(135deg, #252526 0%, #2d2d30 100%);
+    border-radius: 12px;
+    padding: 20px;
+    border: 1px solid #3e3e42;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.25);
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+    border-color: #4ec9b0;
+}
+
+.stat-icon {
+    font-size: 24px;
+    width: 48px;
+    height: 48px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.total-duties .stat-icon { 
+    background: rgba(78, 201, 176, 0.1);
+    color: #4ec9b0; 
+}
+
+.days-count .stat-icon { 
+    background: rgba(197, 134, 192, 0.1);
+    color: #c586c0; 
+}
+
+.stat-content {
+    flex: 1;
+}
+
+.stat-value {
+    font-size: 28px;
+    font-weight: 700;
+    color: #ffffff;
+    line-height: 1;
+    margin-bottom: 4px;
+}
+
+.stat-label {
+    color: #888;
+    font-size: 13px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Таблица распределения */
+.distribution-table {
+    background: linear-gradient(135deg, #252526 0%, #2d2d30 100%);
+    border-radius: 12px;
+    margin-bottom: 32px;
+    border: 1px solid #3e3e42;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+    overflow: hidden;
+}
+
+.table-header {
+    padding: 20px 24px;
+    border-bottom: 1px solid #3e3e42;
+}
+
+.table-header h2 {
+    margin: 0;
+    color: #ffffff;
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.table-container {
+    overflow-x: auto;
+}
+
+.duties-table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 600px; /* Уменьшили ширину т.к. убрали колонку */
+}
+
+.duties-table th {
+    padding: 16px 24px;
+    text-align: left;
+    background: rgba(255, 255, 255, 0.05);
+    color: #4ec9b0;
+    font-weight: 600;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 2px solid #4ec9b0;
+}
+
+.duties-table td {
+    padding: 20px 24px;
+    border-bottom: 1px solid #3e3e42;
+    vertical-align: top;
+}
+
+.duties-table tr:last-child td {
+    border-bottom: none;
+}
+
+.duties-table tr:hover {
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.today-row {
+    background: rgba(86, 156, 214, 0.1);
+}
+
+.today-row td:first-child {
+    position: relative;
+}
+
+.today-row td:first-child::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    background: #569cd6;
+    border-radius: 0 2px 2px 0;
+}
+
+/* Ячейки таблицы - ТЕПЕРЬ ТОЛЬКО 2 КОЛОНКИ */
+.date-cell {
+    width: 120px;
+}
+
+.date-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.date-day {
+    font-size: 20px;
+    font-weight: 700;
+    color: #ffffff;
+    min-width: 24px;
+}
+
+.date-weekday {
+    color: #888;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+/* КОМБИНИРОВАННАЯ ЯЧЕЙКА С НАРЯДАМИ И ПОДРАЗДЕЛЕНИЯМИ */
+.combined-cell {
+    min-width: 400px;
+}
+
+.combined-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.combined-item {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    padding: 12px 16px;
+    border-left: 3px solid #569cd6;
+    transition: all 0.2s;
+}
+
+.combined-item:hover {
+    background: rgba(86, 156, 214, 0.1);
+    transform: translateX(3px);
+}
+
+.combined-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 6px;
+}
+
+.duty-name {
+    font-weight: 600;
+    color: #f0f0f0;
+    font-size: 14px;
+    flex: 1;
+}
+
+.duty-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+}
+
+.people-count {
+    background: rgba(78, 201, 176, 0.2);
+    color: #4ec9b0;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-weight: 600;
+}
+
+.unit-info {
+    color: #888;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding-top: 4px;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* Распределение по кафедрам */
+.department-distribution {
+    background: linear-gradient(135deg, #252526 0%, #2d2d30 100%);
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 32px;
+    border: 1px solid #3e3e42;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+}
+
+.section-header h2 {
+    margin: 0 0 20px 0;
+    color: #ffffff;
+    font-size: 18px;
+    font-weight: 600;
+    border-bottom: 2px solid #569cd6;
+    padding-bottom: 10px;
+}
+
+.dept-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 16px;
+}
+
+.dept-stat {
+    padding: 16px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    border: 1px solid #3e3e42;
+    transition: all 0.2s;
+}
+
+.dept-stat:hover {
+    border-color: #4ec9b0;
+    background: rgba(78, 201, 176, 0.1);
+    transform: translateY(-2px);
+}
+
+.dept-name {
+    font-weight: 500;
+    color: #f0f0f0;
+    margin-bottom: 8px;
+    font-size: 14px;
+}
+
+.dept-count {
+    color: #4ec9b0;
+    font-weight: 600;
+    font-size: 16px;
+}
+
+/* Пустое состояние */
+.empty-state {
+    background: linear-gradient(135deg, #252526 0%, #2d2d30 100%);
+    border-radius: 12px;
+    padding: 48px 24px;
+    text-align: center;
+    border: 1px solid #3e3e42;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+}
+
+.empty-icon {
+    font-size: 48px;
+    color: #888;
+    margin-bottom: 16px;
+    opacity: 0.5;
+}
+
+.empty-state h3 {
+    color: #f0f0f0;
+    margin: 0 0 8px 0;
+    font-size: 18px;
+}
+
+.empty-state p {
+    color: #888;
+    margin: 0;
+    font-size: 14px;
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+    .duties-header {
+        flex-direction: column;
+        align-items: stretch;
+        text-align: center;
+    }
+    
+    .month-switcher {
+        min-width: auto;
+    }
+    
+    .main-stats {
+        grid-template-columns: 1fr;
+    }
+    
+    .duties-table {
+        min-width: 400px;
+    }
+    
+    .duties-table th,
+    .duties-table td {
+        padding: 12px 16px;
+    }
+    
+    .dept-stats-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .combined-item {
+        padding: 10px 12px;
+    }
+    
+    .combined-header {
+        flex-direction: column;
+        gap: 4px;
+    }
+}
+
+@media (max-width: 480px) {
+    .faculty-duties-container {
+        padding: 12px;
+    }
+    
+    .duties-header {
+        padding: 16px;
+    }
+    
+    .header-main h1 {
+        font-size: 20px;
+    }
+    
+    .date-wrapper {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 4px;
+    }
+    
+    .stat-icon {
+        width: 40px;
+        height: 40px;
+        font-size: 20px;
+    }
+    
+    .stat-value {
+        font-size: 24px;
+    }
+    
+    .duties-table {
+        min-width: 300px;
+    }
+}

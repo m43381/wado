@@ -13,4 +13,5 @@ urlpatterns = [
     path('permission/', include('permission.urls', namespace='permission')),
     path('missing/', include('missing.urls', namespace='missing')),
     path('duty/', include(('duty.urls_faculty', 'faculty_duty'), namespace='duty')),
+    path('academic-duties/', views.FacultyAcademicDutiesView.as_view(), name='academic_duties'),
 ]

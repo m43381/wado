@@ -1,5 +1,6 @@
 # core/templatetags/custom_filters.py
 from django import template
+from datetime import timedelta
 
 register = template.Library()
 
@@ -44,3 +45,55 @@ def slice_str(value, arg):
         return value[start:end]
     except (ValueError, AttributeError):
         return value
+    
+
+@register.filter
+def add_days(value, days):
+    """
+    Добавить дни к дате
+    Использование: {{ some_date|add_days:3 }}
+    """
+    try:
+        days = int(days)
+        return value + timedelta(days=days)
+    except (ValueError, TypeError, AttributeError):
+        return value
+
+@register.filter
+def filter_by_date(queryset, date):
+    """
+    Фильтровать QuerySet по дате
+    """
+    if hasattr(queryset, 'filter'):
+        return queryset.filter(date=date)
+    return [item for item in queryset if getattr(item, 'date', None) == date]
+
+@register.filter
+def divide(value, arg):
+    """Разделить число"""
+    try:
+        return float(value) / float(arg)
+    except (ValueError, ZeroDivisionError, TypeError):
+        return 0
+
+@register.filter
+def multiply(value, arg):
+    """Умножить число"""
+    try:
+        return float(value) * float(arg)
+    except (ValueError, TypeError):
+        return 0
+
+@register.filter
+def day_of_week_short(date):
+    """Короткое название дня недели"""
+    days = ['пн', 'вт', 'ср', 'чт', 'пт', 'сб', 'вс']
+    try:
+        return days[date.weekday()]
+    except (AttributeError, IndexError):
+        return ''
+    
+@register.filter
+def get_item(dictionary, key):
+    """Получить элемент из словаря"""
+    return dictionary.get(key, [])

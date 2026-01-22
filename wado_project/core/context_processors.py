@@ -26,6 +26,7 @@ def sidebar_menu(request):
             {'name': 'Допуски к нарядам', 'url_name': 'faculty:permission:faculty_list'},
             {'name': 'Освобождения', 'url_name': 'faculty:missing:faculty_list'},
             {'name': 'Наряды', 'url_name': 'faculty:duty:list'},
+            {'name': 'Академические наряды', 'url_name': 'faculty:academic_duties'},
             {'name': 'Уведомления', 'url_name': 'notifications:list'},
         ]
     elif user_type == 'department':
