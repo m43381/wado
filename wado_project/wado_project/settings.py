@@ -21,6 +21,8 @@ ALLOWED_HOSTS = ['*']
 # Application definition
 
 INSTALLED_APPS = [
+    'django.contrib.humanize',
+    'research.apps.ResearchConfig',
     'notifications.apps.NotificationsConfig',
     'core.apps.CoreConfig',
     'faculty.apps.FacultyConfig',

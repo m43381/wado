@@ -10,5 +10,6 @@ urlpatterns = [
     path('department/', include('department.urls')),
     path('commandant/', include('commandant.urls')),
     path('faculty/', include('faculty.urls')),
+    path('research/', include('research.urls')),
     path('', views.homepage, name='home'),
 ]
