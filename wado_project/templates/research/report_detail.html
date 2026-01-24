@@ -1,0 +1,837 @@
+{% extends "base_account.html" %}
+{% load static %}
+{% load humanize %}
+
+{% block title %}Отчёт об эффективности - {{ report.plan.month|date:"F Y" }}{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'css/report_detail.css' %}">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+<!-- MathJax для формул -->
+<script>
+    window.MathJax = {
+        tex: {
+            inlineMath: [['$', '$'], ['\\(', '\\)']],
+            displayMath: [['$$', '$$'], ['\\[', '\\]']],
+            processEscapes: true,
+            processEnvironments: true
+        },
+        options: {
+            skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre'],
+            ignoreHtmlClass: 'tex2jax_ignore',
+            processHtmlClass: 'tex2jax_process'
+        }
+    };
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+<style>
+    .detailed-stats-section,
+    .histograms-section,
+    .edf-section,
+    .metrics-analysis-section,
+    .explanation-section {
+        background: linear-gradient(135deg, #222222 0%, #1a1a1a 100%);
+        border-radius: 24px;
+        padding: 40px;
+        margin-bottom: 40px;
+        border: 3px solid;
+    }
+
+    .detailed-stats-section { border-color: #4ec9b0; }
+    .histograms-section { border-color: #569cd6; }
+    .edf-section { border-color: #c586c0; }
+    .metrics-analysis-section { border-color: #4ec9b0; }
+    .explanation-section { border-color: #3e3e42; }
+
+    h2 {
+        color: #ffffff;
+        margin-bottom: 30px;
+        font-size: 2.2rem;
+        display: flex;
+        align-items: center;
+        gap: 15px;
+    }
+
+    .stats-grid-detailed,
+    .histograms-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+        gap: 30px;
+        margin-top: 30px;
+    }
+
+    .detailed-stats-card,
+    .histogram-container {
+        background: rgba(255, 255, 255, 0.05);
+        padding: 25px;
+        border-radius: 15px;
+        border: 2px solid #3e3e42;
+    }
+
+    table { width: 100%; border-collapse: collapse; }
+
+    td {
+        padding: 12px 10px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        color: #f0f0f0;
+    }
+
+    td:first-child { color: #bbbbbb; width: 70%; }
+    td:last-child {
+        color: #4ec9b0;
+        font-weight: bold;
+        text-align: right;
+    }
+
+    .contribution-bar {
+        background: rgba(255, 255, 255, 0.1);
+        height: 20px;
+        border-radius: 10px;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .contribution-fill {
+        background: linear-gradient(90deg, #4ec9b0, #569cd6);
+        height: 100%;
+        border-radius: 10px;
+        transition: width 0.5s ease;
+    }
+
+    .contribution-bar span {
+        position: absolute;
+        right: 10px;
+        top: 0;
+        line-height: 20px;
+        color: #ffffff;
+        font-size: 0.9rem;
+        font-weight: bold;
+    }
+
+    .explanation-card {
+        background: rgba(255, 255, 255, 0.03);
+        padding: 30px;
+        border-radius: 15px;
+        border-left: 6px solid #4ec9b0;
+        margin-bottom: 30px;
+    }
+
+    .explanation-card:last-child { margin-bottom: 0; }
+
+    .explanation-card h3 {
+        color: #4ec9b0;
+        margin-bottom: 20px;
+        font-size: 1.5rem;
+        border-bottom: 2px solid rgba(78, 201, 176, 0.3);
+        padding-bottom: 10px;
+    }
+
+    .methodology-formulas,
+    .interpretation-rules {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+    }
+
+    .formula, .rule {
+        background: rgba(0, 0, 0, 0.2);
+        padding: 15px;
+        border-radius: 10px;
+        border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .formula h4, .rule h4 {
+        color: #569cd6;
+        margin-bottom: 10px;
+        font-size: 1.1rem;
+    }
+
+    .probability-formula, .stieltjes-formula {
+        background: rgba(0, 0, 0, 0.3);
+        padding: 20px;
+        border-radius: 10px;
+        margin: 15px 0;
+        text-align: center;
+        font-size: 1.1rem;
+    }
+
+    .small-note {
+        margin-top: 12px;
+        color: #bbbbbb;
+        font-size: 0.9rem;
+        opacity: 0.9;
+    }
+
+    @media (max-width: 768px) {
+        .stats-grid-detailed,
+        .histograms-grid { grid-template-columns: 1fr; }
+
+        .detailed-stats-section,
+        .histograms-section,
+        .edf-section,
+        .metrics-analysis-section,
+        .explanation-section {
+            padding: 25px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block account_content %}
+<div class="report-container">
+
+    <!-- Заголовок отчёта -->
+    <div class="report-header">
+        <h1>
+            <i class="fas fa-file-alt"></i>
+            Отчёт об эффективности распределения
+        </h1>
+        <div class="report-meta">
+            <span class="meta-item">
+                <i class="fas fa-calendar-alt"></i>
+                {{ report.plan.month|date:"F Y" }}
+            </span>
+            <span class="meta-item">
+                <i class="fas fa-cogs"></i>
+                {{ report.scenario.name }}
+            </span>
+            <span class="meta-item">
+                <i class="fas fa-clock"></i>
+                {{ report.created_at|date:"d.m.Y" }}
+            </span>
+        </div>
+    </div>
+
+    <!-- Основные результаты -->
+    <div class="results-section">
+        <h2><i class="fas fa-chart-bar"></i> Основные результаты</h2>
+
+        <div class="results-grid">
+            <!-- Карточка V1 -->
+            <div class="result-card v1">
+                <div class="result-header">
+                    <h3>V1: Агрегированная модель</h3>
+                    <span class="variant-tag">Подразделения</span>
+                </div>
+                <div class="result-content">
+                    <div class="metric">
+                        <div class="metric-label">Средняя вероятность P̄дц:</div>
+                        <div class="metric-value highlight">
+                            {{ report.p_dc_v1_mean|floatformat:3 }}
+                        </div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-label">Гарантируемая вероятность P₀.₉:</div>
+                        <div class="metric-value">
+                            {{ report.p_guaranteed_v1|floatformat:3 }}
+                        </div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-label">Всего симуляций:</div>
+                        <div class="metric-value">
+                            {{ report.total_simulations|intcomma }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Карточка V2 -->
+            <div class="result-card v2">
+                <div class="result-header">
+                    <h3>V2: Детализированная модель</h3>
+                    <span class="variant-tag">Исполнители</span>
+                </div>
+                <div class="result-content">
+                    <div class="metric">
+                        <div class="metric-label">Средняя вероятность P̄дц:</div>
+                        <div class="metric-value highlight">
+                            {{ report.p_dc_v2_mean|floatformat:3 }}
+                        </div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-label">Гарантируемая вероятность P₀.₉:</div>
+                        <div class="metric-value">
+                            {{ report.p_guaranteed_v2|floatformat:3 }}
+                        </div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-label">Всего симуляций:</div>
+                        <div class="metric-value">
+                            {{ report.total_simulations|intcomma }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Выводы -->
+            <div class="result-card conclusion">
+                <div class="result-header">
+                    <h3><i class="fas fa-gavel"></i> Выводы и рекомендации</h3>
+                </div>
+                <div class="result-content">
+                    
+
+                    <div class="recommendations">
+                        <h4>Рекомендации:</h4>
+                        <ul>
+                            {% if report.p_value < 0.05 and report.p_dc_v2_mean > report.p_dc_v1_mean %}
+                                <li>Рекомендуется использовать детализированную модель (V2)</li>
+                                <li>Увеличить детализацию учёта ресурса</li>
+                                <li>Внедрить персональные ограничения</li>
+                                <li>Провести обучение персонала работе с новой моделью</li>
+                            {% elif report.p_value < 0.05 and report.p_dc_v1_mean > report.p_dc_v2_mean %}
+                                <li>Рекомендуется использовать агрегированную модель (V1)</li>
+                                <li>Оптимизировать вычислительные ресурсы</li>
+                                <li>Упростить процесс планирования</li>
+                                <li>Сфокусироваться на улучшении качества данных</li>
+                            {% else %}
+                                <li>При отсутствии статистически значимых различий выбирать вариант по критерию затрат и простоты внедрения</li>
+                                <li>При необходимости — уточнить входные данные и повторить расчёты</li>
+                            {% endif %}
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Детализированная статистика (убран коэффициент вариации) -->
+    <div class="detailed-stats-section">
+        <h2><i class="fas fa-chart-bar"></i> Детализированная статистика</h2>
+
+        <div class="stats-grid-detailed">
+            <!-- Статистика по V1 -->
+            <div class="detailed-stats-card">
+                <h3><i class="fas fa-layer-group"></i> V1: Агрегированная модель</h3>
+                <div class="stats-table">
+                    <table>
+                        <tr>
+                            <td>Среднее значение P<sub>l</sub>:</td>
+                            <td><strong>{{ report.p_dc_v1_mean|floatformat:3 }}</strong></td>
+                        </tr>
+                        <tr>
+                            <td>Медиана:</td>
+                            <td><strong>{{ report.median_v1|floatformat:3 }}</strong></td>
+                        </tr>
+                        
+                        <tr>
+                            <td>Минимальное значение:</td>
+                            <td><strong>{{ report.min_v1|floatformat:3 }}</strong></td>
+                        </tr>
+                        <tr>
+                            <td>Максимальное значение:</td>
+                            <td><strong>{{ report.max_v1|floatformat:3 }}</strong></td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Статистика по V2 -->
+            <div class="detailed-stats-card">
+                <h3><i class="fas fa-user-friends"></i> V2: Детализированная модель</h3>
+                <div class="stats-table">
+                    <table>
+                        <tr>
+                            <td>Среднее значение P<sub>l</sub>:</td>
+                            <td><strong>{{ report.p_dc_v2_mean|floatformat:3 }}</strong></td>
+                        </tr>
+                        <tr>
+                            <td>Медиана:</td>
+                            <td><strong>{{ report.median_v2|floatformat:3 }}</strong></td>
+                        </tr>
+                        
+                        <tr>
+                            <td>Минимальное значение:</td>
+                            <td><strong>{{ report.min_v2|floatformat:3 }}</strong></td>
+                        </tr>
+                        <tr>
+                            <td>Максимальное значение:</td>
+                            <td><strong>{{ report.max_v2|floatformat:3 }}</strong></td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Гистограммы (убраны асимметрия/эксцесс) -->
+    <div class="histograms-section">
+        <h2><i class="fas fa-chart-area"></i> Распределение оценок вероятности</h2>
+
+        <div class="histograms-grid">
+            <div class="histogram-container">
+                <h3>V1: Распределение P<sub>l</sub> (агрегированная модель)</h3>
+                <canvas id="histogramV1"></canvas>
+            </div>
+
+            <div class="histogram-container">
+                <h3>V2: Распределение P<sub>l</sub> (детализированная модель)</h3>
+                <canvas id="histogramV2"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Эмпирическая функция распределения (убрано "CDF" и переименовано) -->
+    <div class="edf-section">
+        <h2><i class="fas fa-chart-line"></i> Эмпирическая функция распределения оценок условной вероятности достижения цели</h2>
+        <div class="edf-chart-container">
+            <canvas id="edfChart"></canvas>
+            <div class="cdf-legend">
+                <div class="legend-item">
+                    <span class="legend-color v1"></span>
+                    <span>V1: P{P<sub>l</sub> ≤ x}</span>
+                </div>
+                <div class="legend-item">
+                    <span class="legend-color v2"></span>
+                    <span>V2: P{P<sub>l</sub> ≤ x}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Анализ показателей качества -->
+    <div class="metrics-analysis-section">
+        <h2><i class="fas fa-tachometer-alt"></i> Анализ показателей качества ŷ₁...ŷ₅</h2>
+
+        <div class="metrics-radar-container">
+            <h3>Сравнительный профиль эффективности</h3>
+            <canvas id="radarChart"></canvas>
+        </div>
+
+        <div class="metrics-breakdown">
+            <h3>Частота влияния показателей качества на событие достижения цели</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Показатель</th>
+                        <th>Среднее значение</th>
+                        <th>Вероятность выполнения</th>
+                        <th>Частота влияния</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for metric in metrics_breakdown %}
+                    <tr>
+                        <td>ŷ{{ forloop.counter }}: {{ metric.name }}</td>
+                        <td>{{ metric.mean_value|floatformat:3 }}</td>
+                        <td>{{ metric.success_rate|floatformat:3 }}</td>
+                        <td>
+                            <div class="contribution-bar">
+                                <div class="contribution-fill" style="width: {{ metric.contribution }}%"></div>
+                                <span>{{ metric.contribution|floatformat:1 }}%</span>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Теоретические основы -->
+    <div class="theory-section">
+        <h2><i class="fas fa-graduation-cap"></i> Теоретические основы анализа</h2>
+
+        <!-- Мелкий текст с определениями -->
+        <div class="small-note">
+            P̄дц — априорная вероятность достижения цели; <br>
+            P<sub>γ</sub> — гарантируемая вероятность при уровне гарантии γ.
+        </div>
+
+        <div class="formulas-display">
+            <div class="formula-card">
+                <h3>Вероятность достижения цели</h3>
+                <div class="formula">
+                    \[
+                    P_{\text{ДЦ}} = P\{(\hat{y}_1 \geq \hat{z}_1) \cap (\hat{y}_2 \geq \hat{z}_2) \cap (\hat{y}_3 \leq \hat{z}_3) \cap (\hat{y}_4 \leq \hat{z}_4) \cap (\hat{y}_5 \leq \hat{z}_5)\}
+                    \]
+                </div>
+                <div class="formula-explanation">
+                    <p>Где:</p>
+                    <ul>
+                        <li>ŷ₁ - доля корректных назначений</li>
+                        <li>ŷ₂ - доля срочных нарядов в срок</li>
+                        <li>ŷ₃ - показатель перегруза</li>
+                        <li>ŷ₄ - перерасход ресурса (сверхурочные)</li>
+                        <li>ŷ₅ - максимальная задержка выполнения</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="formula-card">
+                <h3>Оценка средней вероятности</h3>
+                <div class="formula">
+                    \[
+                    \bar{P}_{\text{ДЦ}} = \frac{1}{N_1} \sum_{l=1}^{N_1} \hat{p}_l
+                    \]
+                </div>
+                <div class="formula-explanation">
+                    <p>где:</p>
+                    <ul>
+                        <li>N₁ - число сценариев во внешнем цикле</li>
+                        <li>p̂ₗ - оценка условной вероятности для сценария l</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="formula-card">
+                <h3>Гарантируемая вероятность</h3>
+                <div class="formula">
+                    \[
+                    P_L = \hat{p}_{(r)}, \quad r = \lfloor (1-L) \cdot N \rfloor
+                    \]
+                </div>
+                <div class="formula-explanation">
+                    <p>где:</p>
+                    <ul>
+                        <li>L - уровень гарантии (0.9)</li>
+                        <li>r - номер ранговой статистики, соответствующей уровню гарантии L</li>
+                        <li>p̂₍ᵣ₎ - r-ая ранговая статистика</li>
+                        <li>N - общее число оценок</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Пояснительная записка (убран раздел "3. Статистические методы анализа", перенумерация) -->
+    <div class="explanation-section">
+        <h2><i class="fas fa-file-alt"></i> Пояснительная записка к расчётам</h2>
+
+        <div class="explanation-content">
+            <div class="explanation-card">
+                <h3>1. Методология исследования</h3>
+                <p>Используется <strong>двухконтурный метод статистических испытаний (СИМ)</strong>:</p>
+
+                <div class="methodology-formulas">
+                    <div class="formula">
+                        <h4>Внешний цикл (сценарии обстановки):</h4>
+                        \[
+                        l = 1 \ldots N_1, \quad N_1 = {{ report.scenario.n1_scenarios }}
+                        \]
+                        <p>Для каждого сценария генерируются параметры обстановки: интенсивность нарядов, доступность подразделений, доля срочных заданий.</p>
+                    </div>
+
+                    <div class="formula">
+                        <h4>Внутренний цикл (прогоны операции):</h4>
+                        \[
+                        i = 1 \ldots N_2, \quad N_2 = {{ report.scenario.n2_runs }}
+                        \]
+                        <p>При фиксированном сценарии выполняются многократные запуски алгоритма распределения с различными случайными факторами.</p>
+                    </div>
+
+                    <div class="formula">
+                        <h4>Оценка условной вероятности:</h4>
+                        \[
+                        \hat{p}_l = \frac{m_l}{N_2}, \quad m_l = \sum_{i=1}^{N_2} I_A^{(l,i)}
+                        \]
+                        <p>где \(I_A^{(l,i)}\) — индикатор успешного выполнения операции в i-м прогоне при l-м сценарии.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="explanation-card">
+                <h3>2. Вероятность достижения цели</h3>
+                <p>Основной показатель эффективности определяется как:</p>
+
+                <div class="probability-formula">
+                    \[
+                    P_{\text{ДЦ}} = P\left\{
+                    \begin{array}{l}
+                    (\hat{y}_1 \geq \hat{z}_1) \cap (\hat{y}_2 \geq \hat{z}_2) \cap \\
+                    (\hat{y}_3 \leq \hat{z}_3) \cap (\hat{y}_4 \leq \hat{z}_4) \cap \\
+                    (\hat{y}_5 \leq \hat{z}_5)
+                    \end{array}
+                    \right\}
+                    \]
+                </div>
+
+                <p>
+                    <strong>В теоретической постановке</strong> показатель эффективности может быть представлен в виде
+                    интеграла Стилтьеса. <strong>Практическая оценка</strong> выполняется методом статистического имитационного моделирования.
+                </p>
+
+                <div class="stieltjes-formula">
+                    \[
+                    P_{\text{ДЦ}} = \int_{\Omega_Z} \Phi(\mathbf{z}) \, dF_Z(\mathbf{z})
+                    \]
+                    <p>где \(\Phi(\mathbf{z})\) — операционный функционал, \(F_Z(\mathbf{z})\) — функция распределения требований.</p>
+                </div>
+            </div>
+
+
+        </div>
+    </div>
+
+    <!-- Параметры сценария -->
+    <div class="scenario-section">
+        <h2><i class="fas fa-cogs"></i> Параметры сценария</h2>
+
+        <div class="scenario-details">
+            <div class="scenario-params">
+                <h3>Параметры СИМ</h3>
+                <table>
+                    <tr>
+                        <td>N₁ (число сценариев):</td>
+                        <td><strong>{{ report.scenario.n1_scenarios }}</strong></td>
+                    </tr>
+                    <tr>
+                        <td>N₂ (число прогонов):</td>
+                        <td><strong>{{ report.scenario.n2_runs }}</strong></td>
+                    </tr>
+                    <tr>
+                        <td>Уровень гарантии L:</td>
+                        <td><strong>{{ report.scenario.guarantee_level }}</strong></td>
+                    </tr>
+                    <tr>
+                        <td>Всего симуляций:</td>
+                        <td><strong>{{ report.total_simulations|intcomma }}</strong></td>
+                    </tr>
+                </table>
+            </div>
+
+            <div class="scenario-requirements">
+                <h3>Требования (пороги)</h3>
+                <table>
+                    <tr>
+                        <td>ẑ₁ (мин. доля корректных):</td>
+                        <td><strong>≥ {{ report.scenario.z1 }}</strong></td>
+                    </tr>
+                    <tr>
+                        <td>ẑ₂ (мин. доля срочных):</td>
+                        <td><strong>≥ {{ report.scenario.z2 }}</strong></td>
+                    </tr>
+                    <tr>
+                        <td>ẑ₃ (макс. перегруз):</td>
+                        <td><strong>≤ {{ report.scenario.z3 }}</strong></td>
+                    </tr>
+                    <tr>
+                        <td>ẑ₄ (макс. перерасход):</td>
+                        <td><strong>≤ {{ report.scenario.z4 }}</strong></td>
+                    </tr>
+                    <tr>
+                        <td>ẑ₅ (макс. задержка):</td>
+                        <td><strong>≤ {{ report.scenario.z5 }}</strong></td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Действия -->
+    <div class="actions-section">
+        <a href="{% url 'research:analysis' %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Назад к списку
+        </a>
+        <button onclick="window.print()" class="btn btn-primary">
+            <i class="fas fa-print"></i> Печать отчёта
+        </button>
+        <a href="#" class="btn btn-success" id="exportReport">
+            <i class="fas fa-download"></i> Экспорт в PDF
+        </a>
+    </div>
+</div>
+
+<script>
+    // Данные для графиков
+    const histogramV1 = {{ histogram_data_v1|safe }};
+    const histogramV2 = {{ histogram_data_v2|safe }};
+    const edfData = {{ cdf_data|safe }};   // источник можно оставить прежним, но в интерфейсе "CDF" не используется
+    const radarData = {{ radar_data|safe }};
+
+    document.addEventListener('DOMContentLoaded', function() {
+
+        // 1) Гистограмма V1
+        if (document.getElementById('histogramV1') && histogramV1 && histogramV1.labels.length > 0) {
+            new Chart(document.getElementById('histogramV1').getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels: histogramV1.labels,
+                    datasets: [{
+                        label: 'Частота',
+                        data: histogramV1.values,
+                        backgroundColor: 'rgba(78, 201, 176, 0.7)',
+                        borderColor: '#4ec9b0',
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Распределение оценок Pₗ',
+                            color: '#ffffff',
+                            font: { size: 16 }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: { display: true, text: 'Вероятность Pₗ', color: '#ffffff' },
+                            grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                        },
+                        y: {
+                            title: { display: true, text: 'Частота', color: '#ffffff' },
+                            grid: { color: 'rgba(255, 255, 255, 0.1)' },
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+
+        // 2) Гистограмма V2
+        if (document.getElementById('histogramV2') && histogramV2 && histogramV2.labels.length > 0) {
+            new Chart(document.getElementById('histogramV2').getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels: histogramV2.labels,
+                    datasets: [{
+                        label: 'Частота',
+                        data: histogramV2.values,
+                        backgroundColor: 'rgba(86, 156, 214, 0.7)',
+                        borderColor: '#569cd6',
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Распределение оценок Pₗ',
+                            color: '#ffffff',
+                            font: { size: 16 }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: { display: true, text: 'Вероятность Pₗ', color: '#ffffff' },
+                            grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                        },
+                        y: {
+                            title: { display: true, text: 'Частота', color: '#ffffff' },
+                            grid: { color: 'rgba(255, 255, 255, 0.1)' },
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+
+        // 3) Эмпирическая функция распределения
+        if (document.getElementById('edfChart') && edfData && edfData.x && edfData.x.length > 0) {
+            new Chart(document.getElementById('edfChart').getContext('2d'), {
+                type: 'line',
+                data: {
+                    labels: edfData.x,
+                    datasets: [
+                        {
+                            label: 'V1: P{Pₗ ≤ x}',
+                            data: edfData.v1,
+                            borderColor: '#4ec9b0',
+                            backgroundColor: 'rgba(78, 201, 176, 0.1)',
+                            borderWidth: 3,
+                            fill: true,
+                            tension: 0.3
+                        },
+                        {
+                            label: 'V2: P{Pₗ ≤ x}',
+                            data: edfData.v2,
+                            borderColor: '#569cd6',
+                            backgroundColor: 'rgba(86, 156, 214, 0.1)',
+                            borderWidth: 3,
+                            fill: true,
+                            tension: 0.3
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Эмпирическая функция распределения',
+                            color: '#ffffff',
+                            font: { size: 16 }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: { display: true, text: 'x (вероятность)', color: '#ffffff' },
+                            grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                        },
+                        y: {
+                            title: { display: true, text: 'P{Pₗ ≤ x}', color: '#ffffff' },
+                            grid: { color: 'rgba(255, 255, 255, 0.1)' },
+                            min: 0,
+                            max: 1
+                        }
+                    }
+                }
+            });
+        }
+
+        // 4) Радарная диаграмма
+        if (document.getElementById('radarChart') && radarData && radarData.labels && radarData.labels.length > 0) {
+            new Chart(document.getElementById('radarChart').getContext('2d'), {
+                type: 'radar',
+                data: {
+                    labels: radarData.labels,
+                    datasets: [
+                        {
+                            label: 'V1',
+                            data: radarData.v1,
+                            backgroundColor: 'rgba(78, 201, 176, 0.2)',
+                            borderColor: '#4ec9b0',
+                            borderWidth: 3,
+                            pointBackgroundColor: '#4ec9b0'
+                        },
+                        {
+                            label: 'V2',
+                            data: radarData.v2,
+                            backgroundColor: 'rgba(86, 156, 214, 0.2)',
+                            borderColor: '#569cd6',
+                            borderWidth: 3,
+                            pointBackgroundColor: '#569cd6'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        r: {
+                            angleLines: { color: 'rgba(255, 255, 255, 0.1)' },
+                            grid: { color: 'rgba(255, 255, 255, 0.1)' },
+                            pointLabels: { color: '#ffffff' },
+                            ticks: {
+                                backdropColor: 'transparent',
+                                color: '#ffffff',
+                                stepSize: 0.2
+                            },
+                            min: 0,
+                            max: 1
+                        }
+                    },
+                    plugins: {
+                        legend: { labels: { color: '#ffffff' } }
+                    }
+                }
+            });
+        }
+
+        // Экспорт отчёта
+        document.getElementById('exportReport')?.addEventListener('click', function(e) {
+            e.preventDefault();
+            alert('Функция экспорта в PDF будет реализована в следующем обновлении. Сейчас вы можете использовать функцию печати браузера для сохранения отчёта.');
+        });
+
+        // Инициализация MathJax после загрузки графиков
+        if (window.MathJax) {
+            MathJax.typesetPromise();
+        }
+    });
+</script>
+{% endblock %}

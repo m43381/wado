@@ -1,0 +1,388 @@
+{% extends "base_account.html" %}
+{% load static %}
+
+{% block title %}Отчёт об эффективности - {{ report.plan.month|date:"F Y" }}{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'css/research.css' %}">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+{% endblock %}
+
+{% block account_content %}
+<div class="report-container">
+    <!-- Заголовок отчёта -->
+    <div class="report-header">
+        <h1>
+            <i class="fas fa-file-alt"></i> 
+            Отчёт об эффективности распределения
+        </h1>
+        <div class="report-meta">
+            <span class="meta-item">
+                <i class="fas fa-calendar-alt"></i>
+                {{ report.plan.month|date:"F Y" }}
+            </span>
+            <span class="meta-item">
+                <i class="fas fa-cogs"></i>
+                {{ report.scenario.name }}
+            </span>
+            <span class="meta-item">
+                <i class="fas fa-clock"></i>
+                {{ report.created_at|date:"d.m.Y H:i" }}
+            </span>
+            <span class="meta-item">
+                <i class="fas fa-stopwatch"></i>
+                {{ report.execution_time|floatformat:2 }} сек
+            </span>
+        </div>
+    </div>
+
+    <!-- Основные результаты -->
+    <div class="results-section">
+        <h2><i class="fas fa-chart-bar"></i> Основные результаты</h2>
+        
+        <div class="results-grid">
+            <!-- Карточка V1 -->
+            <div class="result-card v1">
+                <div class="result-header">
+                    <h3>V1: Агрегированная модель</h3>
+                    <span class="variant-tag">Подразделения</span>
+                </div>
+                <div class="result-content">
+                    <div class="metric">
+                        <div class="metric-label">Средняя вероятность P̄дц:</div>
+                        <div class="metric-value highlight">
+                            {{ report.p_dc_v1_mean|floatformat:3 }}
+                        </div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-label">Гарантируемая вероятность P₀.₉:</div>
+                        <div class="metric-value">
+                            {{ report.p_guaranteed_v1|floatformat:3 }}
+                        </div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-label">Всего симуляций:</div>
+                        <div class="metric-value">
+                            {{ report.scenario.n1_scenarios }} × {{ report.scenario.n2_runs }} = 
+                            {{ report.scenario.n1_scenarios|add:0|multiply:report.scenario.n2_runs }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Карточка V2 -->
+            <div class="result-card v2">
+                <div class="result-header">
+                    <h3>V2: Детализированная модель</h3>
+                    <span class="variant-tag">Исполнители</span>
+                </div>
+                <div class="result-content">
+                    <div class="metric">
+                        <div class="metric-label">Средняя вероятность P̄дц:</div>
+                        <div class="metric-value highlight">
+                            {{ report.p_dc_v2_mean|floatformat:3 }}
+                        </div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-label">Гарантируемая вероятность P₀.₉:</div>
+                        <div class="metric-value">
+                            {{ report.p_guaranteed_v2|floatformat:3 }}
+                        </div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-label">Всего симуляций:</div>
+                        <div class="metric-value">
+                            {{ report.scenario.n1_scenarios }} × {{ report.scenario.n2_runs }} = 
+                            {{ report.scenario.n1_scenarios|add:0|multiply:report.scenario.n2_runs }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Выводы -->
+            <div class="result-card conclusion">
+                <div class="result-header">
+                    <h3><i class="fas fa-gavel"></i> Выводы и рекомендации</h3>
+                </div>
+                <div class="result-content">
+                    <div class="conclusion-text">
+                        {{ report.conclusion|linebreaks }}
+                    </div>
+                    
+                    <div class="recommendations">
+                        <h4>Рекомендации:</h4>
+                        <ul>
+                            {% if report.get_better_variant == 'V2' %}
+                            <li>Рекомендуется использовать детализированную модель (V2)</li>
+                            <li>Увеличить детализацию учёта ресурса</li>
+                            <li>Внедрить персональные ограничения</li>
+                            {% elif report.get_better_variant == 'V1' %}
+                            <li>Рекомендуется использовать агрегированную модель (V1)</li>
+                            <li>Упростить модель не снижая эффективности</li>
+                            <li>Оптимизировать вычислительные ресурсы</li>
+                            {% else %}
+                            <li>Провести дополнительный анализ</li>
+                            <li>Уточнить параметры сценария</li>
+                            <li>Рассмотреть гибридный подход</li>
+                            {% endif %}
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Графики сравнения -->
+    <div class="charts-section">
+        <h2><i class="fas fa-chart-line"></i> Визуализация результатов</h2>
+        
+        <div class="charts-grid">
+            <div class="chart-container">
+                <h3>Сравнение средней вероятности P̄дц</h3>
+                <canvas id="meanProbabilityChart"></canvas>
+            </div>
+            
+            <div class="chart-container">
+                <h3>Сравнение гарантируемой вероятности P₀.₉</h3>
+                <canvas id="guaranteedProbabilityChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Теоретические основы -->
+    <div class="theory-section">
+        <h2><i class="fas fa-graduation-cap"></i> Теоретические основы анализа</h2>
+        
+        <div class="formulas-display">
+            <div class="formula-card">
+                <h3>Вероятность достижения цели</h3>
+                <div class="formula">
+                    \[
+                    P_{\text{ДЦ}} = P\{(\hat{y}_1 \geq \hat{z}_1) \cap (\hat{y}_2 \geq \hat{z}_2) \cap (\hat{y}_3 \leq \hat{z}_3) \cap (\hat{y}_4 \leq \hat{z}_4) \cap (\hat{y}_5 \leq \hat{z}_5)\}
+                    \]
+                </div>
+                <div class="formula-explanation">
+                    <p>Где:</p>
+                    <ul>
+                        <li>ŷ₁ - доля корректных назначений</li>
+                        <li>ŷ₂ - доля срочных нарядов в срок</li>
+                        <li>ŷ₃ - показатель перегруза</li>
+                        <li>ŷ₄ - перерасход ресурса</li>
+                        <li>ŷ₅ - максимальная задержка</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="formula-card">
+                <h3>Оценка средней вероятности</h3>
+                <div class="formula">
+                    \[
+                    \bar{P}_{\text{ДЦ}} = \frac{1}{N_1} \sum_{l=1}^{N_1} \hat{p}_l
+                    \]
+                </div>
+                <div class="formula-explanation">
+                    <p>где:</p>
+                    <ul>
+                        <li>N₁ - число сценариев во внешнем цикле</li>
+                        <li>p̂ₗ - оценка условной вероятности для сценария l</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="formula-card">
+                <h3>Гарантируемая вероятность</h3>
+                <div class="formula">
+                    \[
+                    P_L = \hat{p}_{(r)}, \quad r = \lfloor (1-L) \cdot N \rfloor
+                    \]
+                </div>
+                <div class="formula-explanation">
+                    <p>где:</p>
+                    <ul>
+                        <li>L - уровень гарантии (0.9)</li>
+                        <li>p̂₍ᵣ₎ - r-ая ранговая статистика</li>
+                        <li>N - общее число оценок</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Параметры сценария -->
+    <div class="scenario-section">
+        <h2><i class="fas fa-cogs"></i> Параметры сценария</h2>
+        
+        <div class="scenario-details">
+            <div class="scenario-params">
+                <h3>Параметры СИМ</h3>
+                <table>
+                    <tr>
+                        <td>N₁ (число сценариев):</td>
+                        <td><strong>{{ report.scenario.n1_scenarios }}</strong></td>
+                    </tr>
+                    <tr>
+                        <td>N₂ (число прогонов):</td>
+                        <td><strong>{{ report.scenario.n2_runs }}</strong></td>
+                    </tr>
+                    <tr>
+                        <td>Уровень гарантии L:</td>
+                        <td><strong>{{ report.scenario.guarantee_level }}</strong></td>
+                    </tr>
+                    <tr>
+                        <td>Всего симуляций:</td>
+                        <td><strong>{{ report.total_simulations }}</strong></td>
+                    </tr>
+                </table>
+            </div>
+            
+            <div class="scenario-requirements">
+                <h3>Требования (пороги)</h3>
+                <table>
+                    <tr>
+                        <td>ẑ₁ (мин. доля корректных):</td>
+                        <td><strong>≥ {{ report.scenario.z1 }}</strong></td>
+                    </tr>
+                    <tr>
+                        <td>ẑ₂ (мин. доля срочных):</td>
+                        <td><strong>≥ {{ report.scenario.z2 }}</strong></td>
+                    </tr>
+                    <tr>
+                        <td>ẑ₃ (макс. перегруз):</td>
+                        <td><strong>≤ {{ report.scenario.z3 }}</strong></td>
+                    </tr>
+                    <tr>
+                        <td>ẑ₄ (макс. перерасход):</td>
+                        <td><strong>≤ {{ report.scenario.z4 }}</strong></td>
+                    </tr>
+                    <tr>
+                        <td>ẑ₅ (макс. задержка):</td>
+                        <td><strong>≤ {{ report.scenario.z5 }}</strong></td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Действия -->
+    <div class="actions-section">
+        <a href="{% url 'research:analysis' %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Назад к списку
+        </a>
+        <button onclick="window.print()" class="btn btn-primary">
+            <i class="fas fa-print"></i> Печать отчёта
+        </button>
+        <a href="#" class="btn btn-success" id="exportReport">
+            <i class="fas fa-download"></i> Экспорт в PDF
+        </a>
+    </div>
+</div>
+
+<script>
+    // Данные для графиков
+    const chartData = {
+        labels: ['V1', 'V2'],
+        meanData: {{ chart_data.p_mean|safe }},
+        guaranteedData: {{ chart_data.p_guaranteed|safe }},
+    };
+    
+    // Цвета
+    const colors = {
+        v1: 'rgba(78, 201, 176, 0.8)',
+        v2: 'rgba(86, 156, 214, 0.8)',
+        border: ['#4ec9b0', '#569cd6']
+    };
+    
+    $(document).ready(function() {
+        // График средней вероятности
+        new Chart(document.getElementById('meanProbabilityChart'), {
+            type: 'bar',
+            data: {
+                labels: chartData.labels,
+                datasets: [{
+                    label: 'Средняя вероятность P̄дц',
+                    data: chartData.meanData,
+                    backgroundColor: [colors.v1, colors.v2],
+                    borderColor: colors.border,
+                    borderWidth: 2,
+                    borderRadius: 6
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 1.0,
+                        ticks: {
+                            callback: function(value) {
+                                return value.toFixed(2);
+                            }
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return `P̄дц = ${context.parsed.y.toFixed(3)}`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        
+        // График гарантируемой вероятности
+        new Chart(document.getElementById('guaranteedProbabilityChart'), {
+            type: 'bar',
+            data: {
+                labels: chartData.labels,
+                datasets: [{
+                    label: 'Гарантируемая вероятность P₀.₉',
+                    data: chartData.guaranteedData,
+                    backgroundColor: [colors.v1, colors.v2],
+                    borderColor: colors.border,
+                    borderWidth: 2,
+                    borderRadius: 6
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 1.0,
+                        ticks: {
+                            callback: function(value) {
+                                return value.toFixed(2);
+                            }
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return `P₀.₉ = ${context.parsed.y.toFixed(3)}`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        
+        // Экспорт отчёта
+        $('#exportReport').click(function(e) {
+            e.preventDefault();
+            alert('Функция экспорта в разработке. В будущем здесь будет генерация PDF отчёта.');
+        });
+    });
+</script>
+{% endblock %}

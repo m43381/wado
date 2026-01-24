@@ -1,0 +1,1278 @@
+/* ===========================================
+   СТРАНИЦА ОТЧЁТА - УЛУЧШЕННАЯ ЧИТАЕМОСТЬ И ДИЗАЙН
+=========================================== */
+
+/* Основные стили страницы отчёта */
+.report-container {
+    padding: 40px;
+    background: linear-gradient(135deg, #1a1a1a 0%, #0f0f0f 100%);
+    color: #f8f8f8;
+    min-height: 100vh;
+    max-width: 1400px;
+    margin: 0 auto;
+    font-size: 18px;
+    line-height: 1.7;
+    letter-spacing: 0.2px;
+}
+
+/* Заголовок отчёта */
+.report-header {
+    margin-bottom: 50px;
+    padding: 50px;
+    background: linear-gradient(135deg, #252525 0%, #1e1e1e 100%);
+    border-radius: 24px;
+    border: 3px solid #4ec9b0;
+    text-align: center;
+    box-shadow: 0 15px 50px rgba(0, 0, 0, 0.5);
+    position: relative;
+    overflow: hidden;
+}
+
+.report-header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 8px;
+    background: linear-gradient(90deg, #4ec9b0, #569cd6, #c586c0);
+    z-index: 1;
+}
+
+.report-header h1 {
+    color: #ffffff;
+    margin-bottom: 30px;
+    font-size: 3.5rem;
+    font-weight: 900;
+    text-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+    line-height: 1.2;
+    letter-spacing: 1px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+    position: relative;
+    z-index: 2;
+}
+
+.report-header h1 i {
+    color: #4ec9b0;
+    font-size: 3rem;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+}
+
+.report-meta {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 30px;
+    margin-top: 40px;
+    position: relative;
+    z-index: 2;
+}
+
+.meta-item {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 18px 30px;
+    border-radius: 50px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: #f0f0f0;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    transition: all 0.3s ease;
+    min-width: 250px;
+    justify-content: center;
+    backdrop-filter: blur(10px);
+}
+
+.meta-item:hover {
+    background: rgba(78, 201, 176, 0.2);
+    border-color: #4ec9b0;
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(78, 201, 176, 0.3);
+}
+
+.meta-item i {
+    color: #4ec9b0;
+    font-size: 1.4rem;
+}
+
+/* Основные результаты */
+.results-section {
+    margin-bottom: 60px;
+}
+
+.results-section h2 {
+    color: #ffffff;
+    margin-bottom: 40px;
+    font-size: 2.8rem;
+    font-weight: 900;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    letter-spacing: 0.5px;
+    border-bottom: 4px solid #4ec9b0;
+    padding-bottom: 20px;
+}
+
+.results-section h2 i {
+    color: #4ec9b0;
+    font-size: 2.2rem;
+}
+
+.results-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: 40px;
+    margin-top: 30px;
+}
+
+@media (max-width: 768px) {
+    .results-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Карточки результатов */
+.result-card {
+    background: linear-gradient(135deg, #252525 0%, #1a1a1a 100%);
+    border-radius: 20px;
+    padding: 40px;
+    border: 3px solid;
+    transition: all 0.4s ease;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+}
+
+.result-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 8px;
+    background: inherit;
+    opacity: 0.8;
+}
+
+.result-card.v1 {
+    border-color: #4ec9b0;
+}
+
+.result-card.v1::before {
+    background: linear-gradient(90deg, #4ec9b0, #3aa794);
+}
+
+.result-card.v2 {
+    border-color: #569cd6;
+}
+
+.result-card.v2::before {
+    background: linear-gradient(90deg, #569cd6, #4a86b9);
+}
+
+.result-card.conclusion {
+    border-color: #d7ba7d;
+    grid-column: span 2;
+}
+
+@media (max-width: 768px) {
+    .result-card.conclusion {
+        grid-column: span 1;
+    }
+}
+
+.result-card.conclusion::before {
+    background: linear-gradient(90deg, #d7ba7d, #c19c65);
+}
+
+.result-card:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
+}
+
+.result-header {
+    margin-bottom: 35px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 20px;
+}
+
+.result-header h3 {
+    color: #ffffff;
+    margin: 0;
+    font-size: 2.2rem;
+    font-weight: 800;
+    letter-spacing: 0.3px;
+}
+
+.variant-tag {
+    padding: 12px 28px;
+    border-radius: 50px;
+    font-weight: 900;
+    font-size: 1.1rem;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    border: 3px solid;
+}
+
+.v1 .variant-tag {
+    background: rgba(78, 201, 176, 0.2);
+    color: #4ec9b0;
+    border-color: rgba(78, 201, 176, 0.5);
+}
+
+.v2 .variant-tag {
+    background: rgba(86, 156, 214, 0.2);
+    color: #569cd6;
+    border-color: rgba(86, 156, 214, 0.5);
+}
+
+.result-content {
+    position: relative;
+    z-index: 2;
+}
+
+.metric {
+    margin-bottom: 30px;
+    padding-bottom: 25px;
+    border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+}
+
+.metric:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+    padding-bottom: 0;
+}
+
+.metric-label {
+    color: #bbbbbb;
+    font-size: 1.2rem;
+    font-weight: 600;
+    margin-bottom: 12px;
+    letter-spacing: 0.2px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.metric-value {
+    color: #ffffff;
+    font-size: 2.5rem;
+    font-weight: 900;
+    line-height: 1.2;
+    letter-spacing: 0.5px;
+}
+
+.metric-value.highlight {
+    color: #4ec9b0;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.metric-value.highlight::after {
+    content: '';
+    display: block;
+    width: 80px;
+    height: 6px;
+    background: linear-gradient(90deg, #4ec9b0, transparent);
+    margin-top: 10px;
+    border-radius: 3px;
+}
+
+/* Выводы и рекомендации */
+.conclusion-text {
+    background: rgba(255, 255, 255, 0.05);
+    padding: 35px;
+    border-radius: 15px;
+    margin-bottom: 35px;
+    border-left: 6px solid #d7ba7d;
+    font-size: 1.2rem;
+    line-height: 1.9;
+    color: #f0f0f0;
+    font-weight: 500;
+}
+
+.conclusion-text strong {
+    color: #4ec9b0;
+    font-weight: 800;
+}
+
+.conclusion-text em {
+    color: #d7ba7d;
+    font-style: italic;
+    font-weight: 600;
+}
+
+.recommendations {
+    background: linear-gradient(135deg, rgba(30, 58, 95, 0.3) 0%, rgba(20, 20, 20, 0.7) 100%);
+    padding: 35px;
+    border-radius: 15px;
+    border: 2px solid #569cd6;
+}
+
+.recommendations h4 {
+    color: #569cd6;
+    margin-bottom: 25px;
+    font-size: 1.8rem;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    letter-spacing: 0.3px;
+}
+
+.recommendations h4::before {
+    content: '📋';
+    font-size: 1.4em;
+}
+
+.recommendations ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.recommendations li {
+    color: #f0f0f0;
+    font-size: 1.15rem;
+    margin-bottom: 20px;
+    padding-left: 40px;
+    position: relative;
+    line-height: 1.7;
+    font-weight: 500;
+}
+
+.recommendations li::before {
+    content: '✅';
+    position: absolute;
+    left: 0;
+    top: 2px;
+    font-size: 1.3rem;
+    color: #4ec9b0;
+}
+
+.recommendations li:last-child {
+    margin-bottom: 0;
+}
+
+/* Графики */
+.charts-section {
+    margin-bottom: 60px;
+    padding: 50px;
+    background: linear-gradient(135deg, #222222 0%, #1a1a1a 100%);
+    border-radius: 24px;
+    border: 3px solid #569cd6;
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4);
+}
+
+.charts-section h2 {
+    color: #ffffff;
+    margin-bottom: 50px;
+    font-size: 2.8rem;
+    font-weight: 900;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    letter-spacing: 0.5px;
+    border-bottom: 4px solid #569cd6;
+    padding-bottom: 20px;
+}
+
+.charts-section h2 i {
+    color: #569cd6;
+    font-size: 2.2rem;
+}
+
+.charts-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+    gap: 50px;
+    margin-top: 30px;
+}
+
+@media (max-width: 768px) {
+    .charts-grid {
+        grid-template-columns: 1fr;
+        gap: 40px;
+    }
+}
+
+.chart-container {
+    background: rgba(255, 255, 255, 0.05);
+    padding: 35px;
+    border-radius: 20px;
+    border: 2px solid #3e3e42;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.chart-container:hover {
+    border-color: #569cd6;
+    transform: translateY(-5px);
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
+}
+
+.chart-container::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 6px;
+    background: linear-gradient(90deg, #569cd6, #4a86b9);
+}
+
+.chart-container h3 {
+    color: #ffffff;
+    margin-bottom: 30px;
+    font-size: 1.8rem;
+    font-weight: 800;
+    text-align: center;
+    letter-spacing: 0.3px;
+    position: relative;
+    z-index: 2;
+}
+
+.chart-container canvas {
+    max-height: 400px !important;
+    width: 100% !important;
+    position: relative;
+    z-index: 2;
+}
+
+/* Теоретические основы */
+.theory-section {
+    margin-bottom: 60px;
+    padding: 50px;
+    background: linear-gradient(135deg, #222222 0%, #1a1a1a 100%);
+    border-radius: 24px;
+    border: 3px solid #c586c0;
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4);
+}
+
+.theory-section h2 {
+    color: #ffffff;
+    margin-bottom: 50px;
+    font-size: 2.8rem;
+    font-weight: 900;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    letter-spacing: 0.5px;
+    border-bottom: 4px solid #c586c0;
+    padding-bottom: 20px;
+}
+
+.theory-section h2 i {
+    color: #c586c0;
+    font-size: 2.2rem;
+}
+
+.formulas-display {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: 40px;
+    margin-top: 30px;
+}
+
+@media (max-width: 768px) {
+    .formulas-display {
+        grid-template-columns: 1fr;
+    }
+}
+
+.formula-card {
+    background: rgba(255, 255, 255, 0.05);
+    padding: 40px;
+    border-radius: 20px;
+    border: 2px solid #3e3e42;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.formula-card:hover {
+    border-color: #c586c0;
+    transform: translateY(-5px);
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
+}
+
+.formula-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 6px;
+    background: linear-gradient(90deg, #c586c0, #a86cad);
+}
+
+.formula-card h3 {
+    color: #ffffff;
+    margin-bottom: 25px;
+    font-size: 1.8rem;
+    font-weight: 800;
+    letter-spacing: 0.3px;
+    position: relative;
+    z-index: 2;
+}
+
+.formula {
+    background: rgba(0, 0, 0, 0.6);
+    padding: 30px;
+    border-radius: 15px;
+    margin-bottom: 25px;
+    border: 2px solid #3e3e42;
+    overflow-x: auto;
+    font-size: 1.3rem;
+    position: relative;
+    z-index: 2;
+}
+
+.formula mjx-container {
+    color: #4ec9b0 !important;
+}
+
+.formula-explanation {
+    background: rgba(255, 255, 255, 0.05);
+    padding: 25px;
+    border-radius: 15px;
+    border-left: 6px solid #569cd6;
+    font-size: 1.15rem;
+    line-height: 1.8;
+    color: #f0f0f0;
+    position: relative;
+    z-index: 2;
+}
+
+.formula-explanation p {
+    color: #569cd6;
+    font-weight: 800;
+    margin-bottom: 15px;
+    font-size: 1.2rem;
+    letter-spacing: 0.2px;
+}
+
+.formula-explanation ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.formula-explanation li {
+    color: #f0f0f0;
+    margin-bottom: 12px;
+    padding-left: 30px;
+    position: relative;
+    font-weight: 500;
+}
+
+.formula-explanation li::before {
+    content: '•';
+    position: absolute;
+    left: 0;
+    top: 0;
+    color: #4ec9b0;
+    font-size: 1.5rem;
+    font-weight: 900;
+}
+
+.formula-explanation li:last-child {
+    margin-bottom: 0;
+}
+
+/* Параметры сценария */
+.scenario-section {
+    margin-bottom: 60px;
+    padding: 50px;
+    background: linear-gradient(135deg, #222222 0%, #1a1a1a 100%);
+    border-radius: 24px;
+    border: 3px solid #d7ba7d;
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4);
+}
+
+.scenario-section h2 {
+    color: #ffffff;
+    margin-bottom: 50px;
+    font-size: 2.8rem;
+    font-weight: 900;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    letter-spacing: 0.5px;
+    border-bottom: 4px solid #d7ba7d;
+    padding-bottom: 20px;
+}
+
+.scenario-section h2 i {
+    color: #d7ba7d;
+    font-size: 2.2rem;
+}
+
+.scenario-details {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+    gap: 50px;
+    margin-top: 30px;
+}
+
+@media (max-width: 768px) {
+    .scenario-details {
+        grid-template-columns: 1fr;
+        gap: 40px;
+    }
+}
+
+.scenario-params,
+.scenario-requirements {
+    background: rgba(255, 255, 255, 0.05);
+    padding: 40px;
+    border-radius: 20px;
+    border: 2px solid #3e3e42;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.scenario-params:hover,
+.scenario-requirements:hover {
+    border-color: #d7ba7d;
+    transform: translateY(-5px);
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
+}
+
+.scenario-params::before,
+.scenario-requirements::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 6px;
+    background: linear-gradient(90deg, #d7ba7d, #c19c65);
+}
+
+.scenario-params h3,
+.scenario-requirements h3 {
+    color: #ffffff;
+    margin-bottom: 35px;
+    font-size: 2rem;
+    font-weight: 800;
+    letter-spacing: 0.3px;
+    position: relative;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.scenario-params h3::before {
+    content: '⚙️';
+    font-size: 1.6em;
+}
+
+.scenario-requirements h3::before {
+    content: '🎯';
+    font-size: 1.6em;
+}
+
+.scenario-params table,
+.scenario-requirements table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    position: relative;
+    z-index: 2;
+}
+
+.scenario-params tr,
+.scenario-requirements tr {
+    border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+}
+
+.scenario-params tr:last-child,
+.scenario-requirements tr:last-child {
+    border-bottom: none;
+}
+
+.scenario-params td,
+.scenario-requirements td {
+    padding: 22px 15px;
+    color: #f0f0f0;
+    font-size: 1.15rem;
+    vertical-align: middle;
+}
+
+.scenario-params td:first-child,
+.scenario-requirements td:first-child {
+    color: #bbbbbb;
+    font-weight: 600;
+    width: 60%;
+    letter-spacing: 0.2px;
+}
+
+.scenario-params td:last-child,
+.scenario-requirements td:last-child {
+    color: #ffffff;
+    font-weight: 900;
+    font-size: 1.4rem;
+    text-align: right;
+    letter-spacing: 0.3px;
+}
+
+.scenario-requirements td:last-child {
+    color: #4ec9b0;
+}
+
+/* Действия */
+.actions-section {
+    display: flex;
+    justify-content: center;
+    gap: 30px;
+    margin-top: 60px;
+    padding-top: 50px;
+    border-top: 4px solid #3e3e42;
+    flex-wrap: wrap;
+}
+
+.actions-section .btn {
+    padding: 22px 45px;
+    font-size: 1.4rem;
+    font-weight: 800;
+    border-radius: 15px;
+    border: 3px solid;
+    transition: all 0.3s ease;
+    min-width: 220px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+}
+
+.actions-section .btn-secondary {
+    background: linear-gradient(135deg, #555555, #444444);
+    color: #ffffff;
+    border-color: #666666;
+}
+
+.actions-section .btn-primary {
+    background: linear-gradient(135deg, #569cd6, #4a86b9);
+    color: #000000;
+    border-color: #569cd6;
+}
+
+.actions-section .btn-success {
+    background: linear-gradient(135deg, #4ec9b0, #3aa794);
+    color: #000000;
+    border-color: #4ec9b0;
+}
+
+.actions-section .btn:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.5);
+}
+
+.actions-section .btn-secondary:hover {
+    background: linear-gradient(135deg, #666666, #555555);
+    border-color: #777777;
+}
+
+.actions-section .btn-primary:hover {
+    background: linear-gradient(135deg, #4a86b9, #569cd6);
+    border-color: #4a86b9;
+}
+
+.actions-section .btn-success:hover {
+    background: linear-gradient(135deg, #3aa794, #4ec9b0);
+    border-color: #3aa794;
+}
+
+.actions-section .btn i {
+    font-size: 1.5rem;
+}
+
+/* Анимации и декоративные элементы */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.report-header,
+.results-section,
+.charts-section,
+.theory-section,
+.scenario-section {
+    animation: fadeInUp 0.8s ease-out forwards;
+}
+
+.report-header { animation-delay: 0.1s; }
+.results-section { animation-delay: 0.3s; }
+.charts-section { animation-delay: 0.5s; }
+.theory-section { animation-delay: 0.7s; }
+.scenario-section { animation-delay: 0.9s; }
+
+/* Декоративные элементы */
+.result-card::after,
+.chart-container::after,
+.formula-card::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 150%;
+    height: 150%;
+    background: radial-gradient(circle, rgba(78, 201, 176, 0.1) 0%, transparent 70%);
+    opacity: 0;
+    transition: opacity 0.5s ease;
+    pointer-events: none;
+    z-index: 1;
+}
+
+.result-card:hover::after,
+.chart-container:hover::after,
+.formula-card:hover::after {
+    opacity: 1;
+}
+
+/* Улучшенная печать */
+@media print {
+    .report-container {
+        background: white !important;
+        color: black !important;
+        padding: 20px !important;
+    }
+    
+    .report-header,
+    .results-section,
+    .charts-section,
+    .theory-section,
+    .scenario-section {
+        box-shadow: none !important;
+        border: 2px solid #ccc !important;
+        background: white !important;
+        color: black !important;
+    }
+    
+    .result-card,
+    .chart-container,
+    .formula-card {
+        break-inside: avoid;
+        page-break-inside: avoid;
+    }
+    
+    .actions-section {
+        display: none;
+    }
+}
+
+/* Улучшенная доступность */
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+/* Высокий контраст */
+@media (prefers-contrast: high) {
+    .report-container {
+        background: #000000;
+        color: #ffffff;
+    }
+    
+    .metric-value.highlight {
+        color: #00ff00;
+    }
+}
+
+/* Адаптивность для мобильных */
+@media (max-width: 768px) {
+    .report-container {
+        padding: 20px;
+        font-size: 16px;
+    }
+    
+    .report-header {
+        padding: 30px 20px;
+    }
+    
+    .report-header h1 {
+        font-size: 2.2rem;
+        flex-direction: column;
+        gap: 15px;
+    }
+    
+    .report-meta {
+        flex-direction: column;
+        align-items: center;
+        gap: 15px;
+    }
+    
+    .meta-item {
+        min-width: 100%;
+        font-size: 1rem;
+        padding: 15px 20px;
+    }
+    
+    .results-section h2,
+    .charts-section h2,
+    .theory-section h2,
+    .scenario-section h2 {
+        font-size: 2rem;
+    }
+    
+    .result-card {
+        padding: 25px;
+    }
+    
+    .result-header h3 {
+        font-size: 1.6rem;
+    }
+    
+    .metric-value {
+        font-size: 2rem;
+    }
+    
+    .charts-grid,
+    .formulas-display,
+    .scenario-details {
+        gap: 30px;
+    }
+    
+    .actions-section {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .actions-section .btn {
+        width: 100%;
+        max-width: 300px;
+        font-size: 1.2rem;
+        padding: 18px 30px;
+    }
+}
+
+@media (max-width: 480px) {
+    .report-header h1 {
+        font-size: 1.8rem;
+    }
+    
+    .results-grid,
+    .charts-grid,
+    .formulas-display,
+    .scenario-details {
+        grid-template-columns: 1fr;
+    }
+    
+    .result-card.conclusion {
+        grid-column: span 1;
+    }
+    
+    .metric-value {
+        font-size: 1.8rem;
+    }
+}
+
+/* Добавить в report_detail.css */
+
+/* Детализированная статистика */
+.detailed-stats-section {
+    background: linear-gradient(135deg, #222222 0%, #1a1a1a 100%);
+    border-radius: 24px;
+    padding: 40px;
+    margin-bottom: 40px;
+    border: 3px solid #4ec9b0;
+}
+
+.stats-grid-detailed {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: 30px;
+    margin-top: 30px;
+}
+
+.detailed-stats-card {
+    background: rgba(255, 255, 255, 0.05);
+    padding: 30px;
+    border-radius: 15px;
+    border: 2px solid #3e3e42;
+}
+
+.detailed-stats-card h3 {
+    color: #ffffff;
+    margin-bottom: 25px;
+    font-size: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.stats-table table {
+    width: 100%;
+}
+
+.stats-table td {
+    padding: 15px 10px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    color: #f0f0f0;
+}
+
+.stats-table td:first-child {
+    color: #bbbbbb;
+    width: 70%;
+}
+
+.stats-table td:last-child {
+    color: #4ec9b0;
+    font-weight: bold;
+    text-align: right;
+}
+
+/* Гистограммы */
+.histograms-section {
+    background: linear-gradient(135deg, #222222 0%, #1a1a1a 100%);
+    border-radius: 24px;
+    padding: 40px;
+    margin-bottom: 40px;
+    border: 3px solid #569cd6;
+}
+
+.histograms-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+    gap: 40px;
+    margin-top: 30px;
+}
+
+.histogram-container {
+    background: rgba(255, 255, 255, 0.05);
+    padding: 30px;
+    border-radius: 15px;
+}
+
+.histogram-container h3 {
+    color: #ffffff;
+    margin-bottom: 20px;
+    font-size: 1.3rem;
+    text-align: center;
+}
+
+.histogram-stats {
+    display: flex;
+    justify-content: space-around;
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.histogram-stats p {
+    color: #f0f0f0;
+    margin: 0;
+}
+
+/* CDF график */
+.cdf-section {
+    background: linear-gradient(135deg, #222222 0%, #1a1a1a 100%);
+    border-radius: 24px;
+    padding: 40px;
+    margin-bottom: 40px;
+    border: 3px solid #c586c0;
+}
+
+.cdf-chart-container {
+    background: rgba(255, 255, 255, 0.05);
+    padding: 30px;
+    border-radius: 15px;
+    margin-top: 30px;
+}
+
+.cdf-legend {
+    display: flex;
+    justify-content: center;
+    gap: 30px;
+    margin-top: 20px;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #f0f0f0;
+}
+
+.legend-color {
+    width: 20px;
+    height: 20px;
+    border-radius: 4px;
+}
+
+.legend-color.v1 {
+    background: #4ec9b0;
+}
+
+.legend-color.v2 {
+    background: #569cd6;
+}
+
+/* Корреляционный анализ */
+.correlation-section {
+    background: linear-gradient(135deg, #222222 0%, #1a1a1a 100%);
+    border-radius: 24px;
+    padding: 40px;
+    margin-bottom: 40px;
+    border: 3px solid #d7ba7d;
+}
+
+.correlation-content {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 40px;
+    margin-top: 30px;
+}
+
+@media (max-width: 768px) {
+    .correlation-content {
+        grid-template-columns: 1fr;
+    }
+}
+
+.correlation-chart, .correlation-stats {
+    background: rgba(255, 255, 255, 0.05);
+    padding: 30px;
+    border-radius: 15px;
+}
+
+.correlation-stats table {
+    width: 100%;
+}
+
+.correlation-stats td {
+    padding: 12px 10px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    color: #f0f0f0;
+}
+
+.correlation-stats td:first-child {
+    color: #bbbbbb;
+    width: 60%;
+}
+
+.correlation-stats td:last-child {
+    color: #4ec9b0;
+    font-weight: bold;
+}
+
+.regression-formula {
+    background: rgba(0, 0, 0, 0.3);
+    padding: 20px;
+    border-radius: 10px;
+    margin-top: 20px;
+    text-align: center;
+    font-size: 1.2rem;
+}
+
+/* Пояснительная записка */
+.explanation-section {
+    background: linear-gradient(135deg, #252525 0%, #1e1e1e 100%);
+    border-radius: 24px;
+    padding: 50px;
+    margin-bottom: 40px;
+    border: 3px solid #3e3e42;
+}
+
+.explanation-content {
+    display: flex;
+    flex-direction: column;
+    gap: 40px;
+}
+
+.explanation-card {
+    background: rgba(255, 255, 255, 0.03);
+    padding: 35px;
+    border-radius: 15px;
+    border-left: 6px solid #4ec9b0;
+}
+
+.explanation-card h3 {
+    color: #4ec9b0;
+    margin-bottom: 25px;
+    font-size: 1.8rem;
+    border-bottom: 2px solid rgba(78, 201, 176, 0.3);
+    padding-bottom: 15px;
+}
+
+.methodology-formulas,
+.metrics-explanations,
+.stat-methods,
+.interpretation-rules {
+    display: flex;
+    flex-direction: column;
+    gap: 25px;
+}
+
+.formula, .metric-explanation, .method, .rule {
+    background: rgba(0, 0, 0, 0.2);
+    padding: 20px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.formula h4, .metric-explanation h4, .method h4, .rule h4 {
+    color: #569cd6;
+    margin-bottom: 15px;
+    font-size: 1.2rem;
+}
+
+.formula p, .metric-explanation p, .method p, .rule p {
+    color: #f0f0f0;
+    margin-top: 10px;
+    line-height: 1.6;
+}
+
+.probability-formula, .stieltjes-formula {
+    background: rgba(0, 0, 0, 0.3);
+    padding: 25px;
+    border-radius: 10px;
+    margin: 20px 0;
+    text-align: center;
+    font-size: 1.1rem;
+}
+
+.stieltjes-formula p {
+    margin-top: 15px;
+    font-style: italic;
+    color: #bbbbbb;
+}
+
+.rule ul {
+    padding-left: 25px;
+    color: #f0f0f0;
+}
+
+.rule li {
+    margin-bottom: 10px;
+    line-height: 1.6;
+}

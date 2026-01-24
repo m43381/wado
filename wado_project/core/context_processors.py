@@ -16,6 +16,7 @@ def sidebar_menu(request):
             {'name': 'Личный состав', 'url_name': 'commandant:staff'},
             {'name': 'План нарядов', 'url_name': 'commandant:duty_plan'},
             {'name': 'Созданные планы', 'url_name': 'commandant:plan_list'},
+            {'name': 'Исследование эффективности', 'url_name': 'research:analysis'},  # ← НОВЫЙ ПУНКТ
             {'name': 'Уведомления', 'url_name': 'notifications:list'},
         ]
     elif user_type == 'faculty':
