@@ -1,0 +1,1052 @@
+
+══════════════════════════════════════════════════
+ФАЙЛ: ./authentication/models.py
+══════════════════════════════════════════════════
+from django.db import models
+from django.contrib.auth.models import AbstractUser 
+from unit.models import Faculty, Department
+
+class CustomUser (AbstractUser ):
+    faculty = models.ForeignKey(
+        Faculty,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        verbose_name="Факультет",
+        related_name="users"
+    )
+    department = models.ForeignKey(
+        Department,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        verbose_name="Кафедра",
+        related_name="users"
+    )
+    
+    # Переопределяем поля groups и user_permissions
+    groups = models.ManyToManyField(
+        'auth.Group',
+        related_name='customuser_set',  # Уникальное имя для обратного доступа
+        blank=True,
+        help_text='Группы, к которым принадлежит этот пользователь.',
+        verbose_name='Группы'
+    )
+    user_permissions = models.ManyToManyField(
+        'auth.Permission',
+        related_name='customuser_set',  # Уникальное имя для обратного доступа
+        blank=True,
+        help_text='Конкретные разрешения для этого пользователя.',
+        verbose_name='Разрешения пользователя'
+    )
+
+    class Meta:
+        verbose_name = 'Пользователь'
+        verbose_name_plural = 'Пользователи'
+    
+    def __str__(self):
+        return self.username
+
+══════════════════════════════════════════════════
+ФАЙЛ: ./commandant/models.py
+══════════════════════════════════════════════════
+from django.db import models
+
+# Create your models here.
+
+
+══════════════════════════════════════════════════
+ФАЙЛ: ./core/models.py
+══════════════════════════════════════════════════
+from django.db import models
+
+# Create your models here.
+
+
+══════════════════════════════════════════════════
+ФАЙЛ: ./department/models.py
+══════════════════════════════════════════════════
+from django.db import models
+
+# Create your models here.
+
+
+══════════════════════════════════════════════════
+ФАЙЛ: ./duty/models.py
+══════════════════════════════════════════════════
+from django.db import models
+from django.utils import timezone
+from django.urls import reverse
+from django.db.models import Q
+from django.core.exceptions import ValidationError
+from unit.models import Faculty, Department
+from .utils import normalize_weekday_setting
+
+
+class Duty(models.Model):
+    duty_name = models.CharField('Название наряда', max_length=50)
+    duty_weight = models.FloatField('Вес наряда')
+    is_commandant = models.BooleanField('Добавлено комендантом', default=False)
+
+    faculty = models.ForeignKey(
+        Faculty,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        verbose_name='Факультет',
+        related_name='duties'
+    )
+    department = models.ForeignKey(
+        Department,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        verbose_name='Кафедра',
+        related_name='duties'
+    )
+
+    people_count = models.PositiveIntegerField('Количество людей', default=1)
+    
+    assigned_faculty = models.ForeignKey(
+        Faculty,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        verbose_name='Закреплённый факультет',
+        related_name='assigned_duties_as_faculty'
+    )
+    assigned_department = models.ForeignKey(
+        Department,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        verbose_name='Закреплённая кафедра',
+        related_name='assigned_duties_as_department'
+    )
+
+    class Meta:
+        verbose_name = 'Наряд'
+        verbose_name_plural = 'Наряды'
+        constraints = [
+            models.UniqueConstraint(
+                fields=['duty_name'],
+                name='unique_duty_for_commandant',
+                condition=Q(is_commandant=True)
+            ),
+            models.UniqueConstraint(
+                fields=['duty_name', 'faculty'],
+                name='unique_duty_for_faculty',
+                condition=Q(faculty__isnull=False, department__isnull=True, is_commandant=False)
+            ),
+            models.UniqueConstraint(
+                fields=['duty_name', 'department'],
+                name='unique_duty_for_department',
+                condition=Q(department__isnull=False)
+            ),
+        ]
+
+    def __str__(self):
+        return self.duty_name
+
+    @property
+    def is_fixed_duty(self):
+        """Проверить, является ли наряд закрепленным"""
+        return bool(self.assigned_faculty or self.assigned_department)
+    
+    def get_original_assignment(self):
+        """Получить исходное закрепленное подразделение"""
+        if self.assigned_faculty:
+            return ('faculty', self.assigned_faculty)
+        elif self.assigned_department:
+            return ('department', self.assigned_department)
+        return (None, None)
+
+    def get_edit_url(self):
+        if self.is_commandant:
+            return reverse('commandant:duty:edit', args=[self.pk])
+        elif self.faculty and not self.department:
+            return reverse('faculty:duty:edit', args=[self.pk])
+        elif self.department:
+            return reverse('department:duty:edit', args=[self.pk])
+
+    def get_assigned_unit_display(self):
+        if self.assigned_faculty:
+            return f"Факультет: {self.assigned_faculty.name}"
+        elif self.assigned_department:
+            return f"Кафедра: {self.assigned_department.name}"
+        return "Нет закрепления"
+
+    def clean(self):
+        """Валидация данных"""
+        super().clean()
+        
+        # Проверка, что назначено только одно подразделение
+        if self.assigned_faculty and self.assigned_department:
+            raise ValidationError('Нельзя закреплять наряд одновременно за факультетом и кафедрой')
+        
+        # Проверка, что вес наряда положительный
+        if self.duty_weight <= 0:
+            raise ValidationError('Вес наряда должен быть положительным числом')
+        
+        # Проверка количества людей
+        if self.people_count <= 0:
+            raise ValidationError('Количество людей должно быть положительным числом')
+
+
+class DutySchedule(models.Model):
+    duty = models.ForeignKey(
+        'Duty',
+        on_delete=models.CASCADE,
+        verbose_name='Наряд',
+        related_name='schedules'
+    )
+    date = models.DateField('Дата наряда')
+    
+    time_start = models.TimeField(
+        'Время начала',
+        null=True,
+        blank=True,
+        help_text='Если не указано, считается на весь день'
+    )
+    time_end = models.TimeField(
+        'Время окончания', 
+        null=True,
+        blank=True,
+        help_text='Если не указано, считается на весь день'
+    )
+    
+    assigned_unit_type = models.CharField(
+        'Тип подразделения',
+        max_length=20,
+        choices=[('faculty', 'Факультет'), ('department', 'Кафедра')],
+        null=True,
+        blank=True
+    )
+    assigned_faculty = models.ForeignKey(
+        Faculty,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        verbose_name='Назначенный факультет',
+        related_name='assigned_duty_schedules'
+    )
+    assigned_department = models.ForeignKey(
+        Department,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        verbose_name='Назначенная кафедра',
+        related_name='assigned_duty_schedules'
+    )
+    
+    is_manually_assigned = models.BooleanField(
+        default=False,
+        verbose_name='Назначено вручную'
+    )
+    
+    created_at = models.DateTimeField('Дата создания', auto_now_add=True)
+    updated_at = models.DateTimeField('Дата обновления', auto_now=True)
+
+    class Meta:
+        verbose_name = 'План наряда'
+        verbose_name_plural = 'Планы нарядов'
+        unique_together = ['duty', 'date', 'time_start', 'time_end']
+        ordering = ['date', 'time_start']
+
+    def __str__(self):
+        if self.time_start and self.time_end:
+            return f"{self.duty.duty_name} - {self.date.strftime('%d.%m.%Y')} {self.time_start.strftime('%H:%M')}-{self.time_end.strftime('%H:%M')}"
+        else:
+            return f"{self.duty.duty_name} - {self.date.strftime('%d.%m.%Y')} (весь день)"
+
+    def get_time_display(self):
+        """Отображение временного промежутка"""
+        if self.time_start and self.time_end:
+            return f"{self.time_start.strftime('%H:%M')}-{self.time_end.strftime('%H:%M')}"
+        return "Весь день"
+
+    def get_assigned_unit_display(self):
+        """Отображение назначенного подразделения"""
+        if self.assigned_faculty:
+            return f"Факультет: {self.assigned_faculty.name}"
+        elif self.assigned_department:
+            return f"Кафедра: {self.assigned_department.name}"
+        return "Не назначено"
+
+    def get_assignment_status(self):
+        """Получить статус назначения с правильной логикой"""
+        # Получаем исходное закрепленное подразделение наряда
+        original_unit_type, original_unit = self.duty.get_original_assignment()
+        
+        print(f"🔍 Анализ статуса для расписания {self.id}:")
+        print(f"   - Наряд: {self.duty.duty_name}")
+        print(f"   - Исходное закрепление: {original_unit_type} - {original_unit}")
+        print(f"   - Назначено: faculty={self.assigned_faculty}, department={self.assigned_department}")
+        print(f"   - Ручное назначение: {self.is_manually_assigned}")
+        
+        # Если наряд закреплен за подразделением
+        if original_unit_type and original_unit:
+            print("   - Наряд ЗАКРЕПЛЕН за подразделением")
+            
+            # Проверяем, назначено ли на закрепленное подразделение
+            if original_unit_type == 'faculty' and self.assigned_faculty == original_unit:
+                print("   - Назначено на ЗАКРЕПЛЕННЫЙ факультет")
+                if self.is_manually_assigned:
+                    print("   - СТАТУС: Изменен (ручное назначение на правильное подразделение)")
+                    return 'changed'
+                else:
+                    print("   - СТАТУС: Закреплен (автоматическое распределение)")
+                    return 'fixed'
+                    
+            elif original_unit_type == 'department' and self.assigned_department == original_unit:
+                print("   - Назначено на ЗАКРЕПЛЕННУЮ кафедру")
+                if self.is_manually_assigned:
+                    print("   - СТАТУС: Изменен (ручное назначение на правильное подразделение)")
+                    return 'changed'
+                else:
+                    print("   - СТАТУС: Закреплен (автоматическое распределение)")
+                    return 'fixed'
+            else:
+                # Назначено на другое подразделение
+                print("   - Назначено на ДРУГОЕ подразделение")
+                if self.is_manually_assigned:
+                    print("   - СТАТУС: Изменен (ручное назначение на другое подразделение)")
+                    return 'changed'
+                else:
+                    print("   - СТАТУС: Ротация (автоматическое распределение на другое подразделение)")
+                    return 'rotating'
+                
+        else:
+            # Для ротационных нарядов (нет закрепленного подразделения)
+            print("   - Наряд РОТАЦИОННЫЙ (нет закрепления)")
+            if self.is_manually_assigned:
+                print("   - СТАТУС: Изменен (ручное назначение)")
+                return 'changed'
+            else:
+                print("   - СТАТУС: Ротация (автоматическое распределение)")
+                return 'rotating'
+    
+
+    def get_assignment_status_display(self):
+        """Текстовое отображение статуса"""
+        status = self.get_assignment_status()
+        status_map = {
+            'fixed': 'Закреплен',
+            'rotating': 'Ротация', 
+            'changed': 'Изменен'
+        }
+        return status_map.get(status, 'Неизвестно')
+
+    def get_assignment_badge_class(self):
+        """Класс для badge в зависимости от статуса"""
+        status = self.get_assignment_status()
+        badge_map = {
+            'fixed': 'badge-fixed',
+            'rotating': 'badge-rotating',
+            'changed': 'badge-changed'
+        }
+        return badge_map.get(status, '')
+
+    def check_manual_assignment(self):
+        """Проверить и установить флаг ручного назначения"""
+        original_unit_type, original_unit = self.duty.get_original_assignment()
+        
+        # Если наряд закреплен за подразделением
+        if original_unit_type and original_unit:
+            # Проверяем, отличается ли назначение от исходного
+            if (original_unit_type == 'faculty' and self.assigned_faculty != original_unit) or \
+            (original_unit_type == 'department' and self.assigned_department != original_unit):
+                return True  # Ручное назначение (изменено)
+            else:
+                return False # Автоматическое назначение (закреплено)
+        else:
+            # Для ротационных нарядов любое назначение считается автоматическим
+            # если не изменено вручную позже
+            return False
+
+    def save(self, *args, **kwargs):
+        """Переопределение save для автоматической установки флага ручного назначения"""
+        # Если флаг не установлен явно, определяем автоматически
+        if self.is_manually_assigned is None:
+            self.is_manually_assigned = self.check_manual_assignment()
+        
+        # Устанавливаем тип подразделения
+        if self.assigned_faculty:
+            self.assigned_unit_type = 'faculty'
+        elif self.assigned_department:
+            self.assigned_unit_type = 'department'
+        else:
+            self.assigned_unit_type = None
+        
+        super().save(*args, **kwargs)
+
+    @property
+    def is_today(self):
+        """Проверить, является ли дата сегодняшней"""
+        return self.date == timezone.now().date()
+
+    @property
+    def is_past(self):
+        """Проверить, является ли дата прошедшей"""
+        return self.date < timezone.now().date()
+
+    @property
+    def is_future(self):
+        """Проверить, является ли дата будущей"""
+        return self.date > timezone.now().date()
+
+    @property
+    def assignment_type(self):
+        """Тип назначения (для обратной совместимости)"""
+        return self.get_assignment_status()
+
+    def clean(self):
+        """Валидация данных"""
+        super().clean()
+        
+        # Проверка, что назначено только одно подразделение
+        if self.assigned_faculty and self.assigned_department:
+            raise ValidationError('Нельзя назначать одновременно и факультет и кафедру')
+        
+        # Проверка временного промежутка
+        if self.time_start and self.time_end:
+            if self.time_start >= self.time_end:
+                raise ValidationError('Время начала должно быть раньше времени окончания')
+
+    def get_absolute_url(self):
+        """URL для детального просмотра (если нужно)"""
+        return reverse('commandant:schedule_detail', kwargs={'pk': self.pk})
+
+    @classmethod
+    def get_schedules_for_month(cls, year, month):
+        """Получить все расписания для указанного месяца"""
+        return cls.objects.filter(
+            date__year=year,
+            date__month=month
+        ).select_related(
+            'duty', 
+            'assigned_faculty', 
+            'assigned_department'
+        ).order_by('date', 'time_start')
+
+    @classmethod
+    def get_unit_stats(cls, year, month):
+        """Статистика по подразделениям за месяц"""
+        from collections import defaultdict
+        
+        schedules = cls.get_schedules_for_month(year, month)
+        stats = defaultdict(lambda: {'count': 0, 'duties': set()})
+        
+        for schedule in schedules:
+            if schedule.assigned_faculty:
+                key = f"faculty_{schedule.assigned_faculty.id}"
+                stats[key]['name'] = f"Факультет {schedule.assigned_faculty.name}"
+                stats[key]['count'] += 1
+                stats[key]['duties'].add(schedule.duty.duty_name)
+            elif schedule.assigned_department:
+                key = f"department_{schedule.assigned_department.id}"
+                stats[key]['name'] = f"Кафедра {schedule.assigned_department.name}"
+                stats[key]['count'] += 1
+                stats[key]['duties'].add(schedule.duty.duty_name)
+        
+        return dict(stats)
+
+
+class MonthlyDutyPlan(models.Model):
+    month = models.DateField('Месяц планирования')
+    
+    duties = models.ManyToManyField(
+        'Duty',
+        verbose_name='Наряды в плане',
+        related_name='monthly_plans',
+        through='MonthlyDutyPlanDuty'
+    )
+    
+    # НОВОЕ ПОЛЕ: выбранные подразделения для распределения
+    selected_units = models.JSONField(
+        'Выбранные подразделения',
+        default=list,
+        blank=True,
+        help_text='JSON список выбранных подразделений для распределения'
+    )
+    
+    is_generated = models.BooleanField('График сгенерирован', default=False)
+    duty_schedule_settings = models.JSONField(
+        'Настройки расписания нарядов',
+        default=dict,
+        blank=True,
+        help_text='JSON с настройками дней для каждого наряда'
+    )
+    last_generated_at = models.DateTimeField('Дата последней генерации', null=True, blank=True)
+    created_at = models.DateTimeField('Дата создания', auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'Месячный план нарядов'
+        verbose_name_plural = 'Месячные планы нарядов'
+        unique_together = ['month']
+
+    def __str__(self):
+        return f"План на {self.month.strftime('%B %Y')}"
+
+    def get_duty_schedule(self, duty):
+        """Получить настройки расписания для конкретного наряда с корректной обработкой дней недели."""
+        schedule_data = self.duty_schedule_settings.get(str(duty.id), {})
+
+        # Словарь для отображения дней недели
+        weekday_names = {
+            0: 'Понедельник',
+            1: 'Вторник',
+            2: 'Среда',
+            3: 'Четверг',
+            4: 'Пятница',
+            5: 'Суббота',
+            6: 'Воскресенье'
+        }
+
+        # Нормализуем и преобразуем дни недели
+        raw_weekdays = schedule_data.get('weekdays', [])
+        converted_weekdays = []
+        
+        for day in raw_weekdays:
+            # Если это уже число (в виде строки), преобразуем
+            if isinstance(day, str) and day.isdigit():
+                day_num = int(day)
+                if 0 <= day_num <= 6:
+                    converted_weekdays.append(weekday_names[day_num])
+            # Если это число
+            elif isinstance(day, int) and 0 <= day <= 6:
+                converted_weekdays.append(weekday_names[day])
+            # Если это строка с названием, оставляем как есть
+            elif isinstance(day, str):
+                converted_weekdays.append(day)
+
+        return {
+            'ranges': [r for r in schedule_data.get('ranges', []) if r and r.strip()],
+            'specific_dates': [d for d in schedule_data.get('specific_dates', []) if d and d.strip()],
+            'weekdays': converted_weekdays,
+        }
+
+    def set_duty_schedule(self, duty, schedule_data):
+        """Установить настройки расписания для конкретного наряда"""
+        self.duty_schedule_settings[str(duty.id)] = schedule_data
+        self.save()
+
+    def clear_duty_schedule(self, duty):
+        """Полностью очистить настройки расписания для наряда"""
+        if str(duty.id) in self.duty_schedule_settings:
+            del self.duty_schedule_settings[str(duty.id)]
+            self.save()
+            return True
+        return False
+
+    def set_duties(self, duties):
+        """Установить наряды для плана"""
+        self.duties.clear()
+        self.duties.add(*duties)
+        self.save()
+
+    def add_duty(self, duty):
+        """Добавить один наряд в план"""
+        self.duties.add(duty)
+        self.save()
+
+    def remove_duty(self, duty):
+        """Удалить наряд из плана"""
+        self.duties.remove(duty)
+        self.save()
+
+    def has_duty(self, duty):
+        """Проверить, есть ли наряд в плане"""
+        return self.duties.filter(id=duty.id).exists()
+
+    def set_selected_units(self, units_data):
+        """Установить выбранные подразделения"""
+        self.selected_units = units_data
+        self.save()
+
+    def get_selected_units_display(self):
+        """Получить отображение выбранных подразделений"""
+        if not self.selected_units:
+            return "Не выбраны"
+        
+        display_list = []
+        for unit in self.selected_units:
+            if unit.startswith('faculty_'):
+                faculty_id = unit.replace('faculty_', '')
+                try:
+                    faculty = Faculty.objects.get(id=faculty_id)
+                    display_list.append(f"Факультет {faculty.name}")
+                except Faculty.DoesNotExist:
+                    display_list.append(f"Факультет (ID: {faculty_id})")
+            elif unit.startswith('department_'):
+                dept_id = unit.replace('department_', '')
+                try:
+                    department = Department.objects.get(id=dept_id)
+                    display_list.append(f"Кафедра {department.name}")
+                except Department.DoesNotExist:
+                    display_list.append(f"Кафедра (ID: {dept_id})")
+        
+        return ", ".join(display_list)
+
+    def clean(self):
+        """Валидация данных"""
+        super().clean()
+        
+        # Проверка, что месяц указан корректно (первое число месяца)
+        if self.month.day != 1:
+            raise ValidationError('Месяц планирования должен быть первым числом месяца')
+
+
+class MonthlyDutyPlanDuty(models.Model):
+    monthly_plan = models.ForeignKey(MonthlyDutyPlan, on_delete=models.CASCADE)
+    duty = models.ForeignKey(Duty, on_delete=models.CASCADE)
+    added_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'duty_monthlydutyplan_duties'
+        unique_together = ['monthly_plan', 'duty']
+        verbose_name = 'Наряд в плане'
+        verbose_name_plural = 'Наряды в планах'
+
+    def __str__(self):
+        return f"{self.duty.duty_name} в плане {self.monthly_plan.month.strftime('%B %Y')}"
+
+══════════════════════════════════════════════════
+ФАЙЛ: ./faculty/models.py
+══════════════════════════════════════════════════
+# faculty/models.py
+from django.db import models
+from django.core.exceptions import ValidationError
+from unit.models import Faculty, Department
+
+class FacultyMonthlyPlan(models.Model):
+    """Месячный план факультета"""
+    faculty = models.ForeignKey(
+        Faculty,
+        on_delete=models.CASCADE,
+        verbose_name='Факультет',
+        related_name='faculty_plans'
+    )
+    month = models.DateField('Месяц планирования')
+    
+    selected_units = models.JSONField(
+        'Выбранные подразделения',
+        default=list,
+        blank=True,
+        help_text='JSON список: ["management"] или ["department_1", "department_2"]'
+    )
+    
+    duty_schedule_settings = models.JSONField(
+        'Настройки расписания нарядов',
+        default=dict,
+        blank=True,
+        help_text='JSON с настройками дней для каждого наряда'
+    )
+    
+    is_generated = models.BooleanField('План сгенерирован', default=False)
+    last_generated_at = models.DateTimeField('Дата последней генерации', null=True, blank=True)
+    
+    created_at = models.DateTimeField('Дата создания', auto_now_add=True)
+    updated_at = models.DateTimeField('Дата обновления', auto_now=True)
+
+    class Meta:
+        verbose_name = 'Факультетский план'
+        verbose_name_plural = 'Факультетские планы'
+        unique_together = ['faculty', 'month']
+        ordering = ['-month']  # ДОБАВЛЕНО: исправляет предупреждение о пагинации
+    
+    def __str__(self):
+        return f"План {self.faculty.name} на {self.month.strftime('%B %Y')}"
+    
+    def clean(self):
+        """Валидация"""
+        if self.month.day != 1:
+            raise ValidationError('Месяц должен быть первым числом')
+    
+    def get_duty_schedule(self, duty):
+        """Получить настройки расписания для конкретного наряда - ВОЗВРАЩАЕТ ЧИСЛА, НЕ НАЗВАНИЯ"""
+        schedule_data = self.duty_schedule_settings.get(str(duty.id), {})
+        
+        # ВОЗВРАЩАЕМ ТОЧНО ТО, ЧТО ХРАНИТСЯ, без преобразования
+        return {
+            'ranges': [r for r in schedule_data.get('ranges', []) if r and r.strip()],
+            'specific_dates': [d for d in schedule_data.get('specific_dates', []) if d and d.strip()],
+            'weekdays': schedule_data.get('weekdays', []),  # Оставляем как есть (числа 0-6)
+        }
+    
+    def get_duty_schedule_display(self, duty):
+        """Получить настройки расписания для ОТОБРАЖЕНИЯ в шаблоне"""
+        schedule_data = self.duty_schedule_settings.get(str(duty.id), {})
+        
+        weekday_names = {
+            '0': 'Понедельник',
+            '1': 'Вторник', 
+            '2': 'Среда',
+            '3': 'Четверг',
+            '4': 'Пятница',
+            '5': 'Суббота',
+            '6': 'Воскресенье'
+        }
+        
+        converted_weekdays = []
+        raw_weekdays = schedule_data.get('weekdays', [])
+        
+        for day in raw_weekdays:
+            if isinstance(day, str) and day in weekday_names:
+                converted_weekdays.append(weekday_names[day])
+            elif isinstance(day, int) and str(day) in weekday_names:
+                converted_weekdays.append(weekday_names[str(day)])
+            elif isinstance(day, str):
+                converted_weekdays.append(day)
+        
+        return {
+            'ranges': [r for r in schedule_data.get('ranges', []) if r and r.strip()],
+            'specific_dates': [d for d in schedule_data.get('specific_dates', []) if d and d.strip()],
+            'weekdays': converted_weekdays,
+        }
+    
+    def set_duty_schedule(self, duty, schedule_data):
+        """Установить настройки расписания для наряда"""
+        self.duty_schedule_settings[str(duty.id)] = schedule_data
+        self.save()
+    
+    def get_selected_units_display(self):
+        """Получить отображение выбранных подразделений"""
+        if not self.selected_units:
+            return "Не выбраны"
+        
+        display_list = []
+        for unit in self.selected_units:
+            if unit == 'management':
+                display_list.append("Управление факультета")
+            elif unit.startswith('department_'):
+                dept_id = unit.replace('department_', '')
+                try:
+                    department = Department.objects.get(id=dept_id, faculty=self.faculty)
+                    display_list.append(f"Кафедра {department.name}")
+                except Department.DoesNotExist:
+                    display_list.append(f"Кафедра (ID: {dept_id})")
+        
+        return ", ".join(display_list)
+
+══════════════════════════════════════════════════
+ФАЙЛ: ./missing/models.py
+══════════════════════════════════════════════════
+# missing/models.py
+
+from django.db import models
+from django.utils import timezone
+from people.models import People
+
+
+class MissingReason(models.TextChoices):
+    ILLNESS = 'illness', 'Болезнь'
+    BUSINESS_TRIP = 'business_trip', 'Командировка'
+    VACATION = 'vacation', 'Отпуск'
+    OTHER = 'other', 'Другое'
+
+
+class FacultyMissing(models.Model):
+    person = models.ForeignKey(People, on_delete=models.CASCADE, related_name='faculty_missing')
+    start_date = models.DateField('Дата начала')
+    end_date = models.DateField('Дата окончания')
+    reason = models.CharField('Причина', max_length=50, choices=MissingReason.choices, default=MissingReason.ILLNESS)
+    comment = models.TextField('Комментарий', blank=True, null=True)
+
+    class Meta:
+        verbose_name = 'Освобождение от факультета'
+        verbose_name_plural = 'Освобождения от факультетов'
+        ordering = ['-start_date']
+
+    def __str__(self):
+        return f"{self.person} - {self.get_reason_display()} ({self.start_date} – {self.end_date})"
+
+    @property
+    def is_active(self):
+        return self.end_date >= timezone.now().date()
+    
+class DepartmentMissing(models.Model):
+    person = models.ForeignKey(People, on_delete=models.CASCADE, related_name='department_missing')
+    start_date = models.DateField('Дата начала')
+    end_date = models.DateField('Дата окончания')
+    reason = models.CharField('Причина', max_length=50, choices=MissingReason.choices, default=MissingReason.ILLNESS)
+    comment = models.TextField('Комментарий', blank=True, null=True)
+
+    class Meta:
+        verbose_name = 'Освобождение от кафедры'
+        verbose_name_plural = 'Освобождения от кафедр'
+        ordering = ['-start_date']
+
+    def __str__(self):
+        return f"{self.person} - {self.get_reason_display()} ({self.start_date} – {self.end_date})"
+
+    @property
+    def is_active(self):
+        return self.end_date >= timezone.now().date()
+
+══════════════════════════════════════════════════
+ФАЙЛ: ./notifications/models.py
+══════════════════════════════════════════════════
+# notifications/models.py
+
+from django.db import models
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
+
+class Notification(models.Model):
+    recipient = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='received_notifications',
+        verbose_name="Получатель"
+    )
+    sender = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='sent_notifications',
+        verbose_name="Отправитель"
+    )
+    message = models.TextField("Сообщение")
+    created_at = models.DateTimeField(auto_now_add=True)
+    is_read = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f"{self.sender} → {self.recipient}"
+
+══════════════════════════════════════════════════
+ФАЙЛ: ./people/models.py
+══════════════════════════════════════════════════
+from django.db import models
+from unit.models import Faculty, Department
+from rank.models import Rank
+
+
+class People(models.Model):
+    full_name = models.CharField('ФИО', max_length=100)
+    faculty = models.ForeignKey(
+        Faculty,
+        verbose_name='Факультет',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True
+    )
+    department = models.ForeignKey(
+        Department,
+        verbose_name='Кафедра',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True
+    )
+    rank = models.ForeignKey(
+        Rank,
+        verbose_name='Звание',
+        on_delete=models.PROTECT
+    )
+    last_duty_date = models.DateField(
+        'Дата последнего наряда',
+        null=True,
+        blank=True
+    )
+    workload = models.FloatField(
+        'Нагрузка',
+        default=0.0
+    )
+
+    class Meta:
+        verbose_name = 'Человек'
+        verbose_name_plural = 'Люди'
+        ordering = ['full_name']
+
+    def __str__(self):
+        return self.full_name
+
+══════════════════════════════════════════════════
+ФАЙЛ: ./permission/models.py
+══════════════════════════════════════════════════
+from django.db import models
+from django.core.exceptions import ValidationError
+from people.models import People
+from duty.models import Duty
+
+class DepartmentDutyPermission(models.Model):
+    """
+    Модель для хранения допусков кафедры к нарядам.
+    Один человек может быть допущен к одному наряду только один раз.
+    """
+    person = models.ForeignKey(
+        People,
+        on_delete=models.CASCADE,
+        verbose_name='Человек',
+        related_name='department_duty_permissions'
+    )
+    duty = models.ForeignKey(
+        Duty,
+        on_delete=models.CASCADE,
+        verbose_name='Наряд',
+        related_name='department_permitted_persons'
+    )
+    
+    class Meta:
+        verbose_name = 'Допуск к наряду (кафедра)'
+        verbose_name_plural = 'Допуски к нарядам (кафедра)'
+        unique_together = [['person', 'duty']]
+        
+    def __str__(self):
+        return f"{self.person} - {self.duty} (кафедра)"
+
+    def clean(self):
+        super().clean()
+        # Проверка, что человек принадлежит кафедре
+        if not self.person.department:
+            raise ValidationError('Человек должен быть привязан к кафедре')
+        
+        # Проверка на уникальность
+        if DepartmentDutyPermission.objects.filter(
+            person=self.person, 
+            duty=self.duty
+        ).exclude(pk=self.pk).exists():
+            raise ValidationError('Этот человек уже имеет допуск к данному наряду')
+
+
+class FacultyDutyPermission(models.Model):
+    """
+    Модель для хранения допусков факультета к нарядам.
+    Один человек может быть допущен к одному наряду только один раз.
+    """
+    person = models.ForeignKey(
+        People,
+        on_delete=models.CASCADE,
+        verbose_name='Человек',
+        related_name='faculty_duty_permissions'
+    )
+    duty = models.ForeignKey(
+        Duty,
+        on_delete=models.CASCADE,
+        verbose_name='Наряд',
+        related_name='faculty_permitted_persons'
+    )
+    
+    class Meta:
+        verbose_name = 'Допуск к наряду (факультет)'
+        verbose_name_plural = 'Допуски к нарядам (факультет)'
+        unique_together = [['person', 'duty']]
+        
+    def __str__(self):
+        return f"{self.person} - {self.duty} (факультет)"
+
+    def clean(self):
+        super().clean()
+        # Проверка, что человек принадлежит факультету
+        if not self.person.faculty:
+            raise ValidationError('Человек должен быть привязан к факультету')
+            
+        # Проверка на уникальность
+        if FacultyDutyPermission.objects.filter(
+            person=self.person, 
+            duty=self.duty
+        ).exclude(pk=self.pk).exists():
+            raise ValidationError('Этот человек уже имеет допуск к данному наряду')
+
+══════════════════════════════════════════════════
+ФАЙЛ: ./rank/models.py
+══════════════════════════════════════════════════
+from django.db import models
+
+# Звание
+class Rank(models.Model):
+    rank = models.CharField('Звание', max_length=30, unique=True)
+
+    class Meta:
+        verbose_name = 'Звание'
+        verbose_name_plural = 'Звания'
+
+    def __str__(self):
+        return self.rank
+
+══════════════════════════════════════════════════
+ФАЙЛ: ./record/models.py
+══════════════════════════════════════════════════
+from django.db import models
+from django.core.exceptions import ValidationError
+from people.models import People
+from duty.models import Duty
+
+class DutyRecord(models.Model):
+    """
+    Модель записи на наряд.
+    Один человек не может быть записан на один и тот же наряд на одну дату дважды.
+    """
+    duty = models.ForeignKey(
+        Duty,
+        on_delete=models.CASCADE,
+        verbose_name='Наряд',
+        related_name='records'
+    )
+    date = models.DateField(
+        verbose_name='Дата наряда'
+    )
+    person = models.ForeignKey(
+        People,
+        on_delete=models.CASCADE,
+        verbose_name='Человек',
+        related_name='duty_records'
+    )
+    
+    class Meta:
+        verbose_name = 'Запись'
+        verbose_name_plural = 'Записи'
+        unique_together = [['duty', 'date', 'person']]
+        ordering = ['date', 'duty']
+        
+    def __str__(self):
+        return f"{self.person} - {self.duty} ({self.date})"
+
+    def clean(self):
+        super().clean()
+        
+        # Проверка уникальности
+        if DutyRecord.objects.filter(
+            duty=self.duty,
+            date=self.date,
+            person=self.person
+        ).exclude(pk=self.pk).exists():
+            raise ValidationError('Этот человек уже записан на этот наряд на указанную дату')
+
+══════════════════════════════════════════════════
+ФАЙЛ: ./unit/models.py
+══════════════════════════════════════════════════
+from django.db import models
+
+
+# Модель факультета
+class Faculty(models.Model):
+    name = models.CharField(max_length=20, verbose_name="Название факультета", unique=True)
+    
+    class Meta:
+        verbose_name = 'Факультет'
+        verbose_name_plural = 'Факультеты'
+    
+    def __str__(self):
+        return self.name
+    
+# Модель кафедры
+class Department(models.Model):
+    name = models.CharField(max_length=20, verbose_name="Название кафедры", unique=True)
+    faculty = models.ForeignKey(
+        'Faculty',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        verbose_name="Факультет",
+        related_name="departments"
+    )
+    
+    class Meta:
+        verbose_name = 'Кафедра'
+        verbose_name_plural = 'Кафедры'
+    
+    def __str__(self):
+        if self.faculty:
+            return f"{self.name}"
+        return self.name

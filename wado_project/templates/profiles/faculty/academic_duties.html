@@ -67,7 +67,7 @@
                 </thead>
                 <tbody>
                     {% for date in sorted_dates %}
-                    <tr class="{% if date == today %}today-row{% endif %}">
+                    <tr>
                         <td class="date-cell">
                             <div class="date-wrapper">
                                 <span class="date-day">{{ date|date:"d" }}</span>

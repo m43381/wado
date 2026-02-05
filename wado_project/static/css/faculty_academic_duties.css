@@ -214,7 +214,8 @@
 }
 
 .today-row {
-    background: rgba(86, 156, 214, 0.1);
+    background: rgba(86,
+     156, 214, 0.1);
 }
 
 .today-row td:first-child {

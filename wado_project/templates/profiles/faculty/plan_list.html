@@ -1,0 +1,768 @@
+{% extends "base_account.html" %}
+{% load static %}
+
+{% block title %}Планы нарядов факультета — {{ faculty.name }}{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'css/commandant_duty_plan.css' %}">
+<style>
+    .faculty-plans-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+    
+    .plans-header {
+        background: linear-gradient(135deg, #2d2d30 0%, #252526 100%);
+        border-radius: 16px;
+        padding: 30px;
+        margin-bottom: 30px;
+        border-left: 6px solid #4ec9b0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 20px;
+        border: 1px solid #3e3e42;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    }
+    
+    .plans-title {
+        color: #ffffff;
+        font-size: 2.2rem;
+        font-weight: 700;
+        margin: 0 0 10px 0;
+    }
+    
+    .plans-subtitle {
+        color: #4ec9b0;
+        font-size: 1rem;
+        margin: 0;
+    }
+    
+    .faculty-stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 20px;
+        margin-bottom: 30px;
+    }
+    
+    .faculty-stat-card {
+        background: linear-gradient(135deg, #252526 0%, #2d2d30 100%);
+        border-radius: 12px;
+        padding: 20px;
+        border: 1px solid #3e3e42;
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .faculty-stat-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: linear-gradient(90deg, #4ec9b0, #569cd6);
+    }
+    
+    .faculty-stat-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+    }
+    
+    .stat-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 15px;
+    }
+    
+    .stat-label {
+        color: #888;
+        font-size: 0.9rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+    
+    .stat-icon {
+        font-size: 1.5rem;
+        color: #4ec9b0;
+    }
+    
+    .stat-value {
+        font-size: 2.2rem;
+        font-weight: 700;
+        color: #ffffff;
+        margin-bottom: 5px;
+    }
+    
+    .plans-timeline {
+        background: linear-gradient(135deg, #252526 0%, #2d2d30 100%);
+        border-radius: 16px;
+        padding: 30px;
+        border: 1px solid #3e3e42;
+        margin-bottom: 30px;
+    }
+    
+    .timeline-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 25px;
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+    
+    .timeline-title {
+        color: #ffffff;
+        font-size: 1.6rem;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+    
+    .plans-list {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+    }
+    
+    .plan-item {
+        background: #2d2d30;
+        border-radius: 12px;
+        padding: 20px;
+        border-left: 4px solid #007acc;
+        transition: all 0.3s ease;
+        border: 1px solid #3e3e42;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 20px;
+        flex-wrap: wrap;
+    }
+    
+    .plan-item:hover {
+        transform: translateX(5px);
+        border-left-color: #4ec9b0;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    }
+    
+    .plan-content {
+        flex: 1;
+        min-width: 300px;
+    }
+    
+    .plan-month {
+        color: #4ec9b0;
+        font-size: 1.2rem;
+        font-weight: 700;
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .plan-meta {
+        display: flex;
+        gap: 20px;
+        flex-wrap: wrap;
+        margin-bottom: 10px;
+    }
+    
+    .plan-badge {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 12px;
+        background: rgba(78, 201, 176, 0.1);
+        border-radius: 15px;
+        font-size: 0.85rem;
+        color: #4ec9b0;
+        border: 1px solid rgba(78, 201, 176, 0.3);
+    }
+    
+    .plan-units {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-top: 10px;
+        font-size: 0.85rem;
+        color: #888;
+    }
+    
+    .plan-actions {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+    
+    .btn-view-faculty {
+        background: rgba(86, 156, 214, 0.1);
+        color: #569cd6;
+        border: 1px solid rgba(86, 156, 214, 0.3);
+        padding: 8px 16px;
+        border-radius: 6px;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+    
+    .btn-view-faculty:hover {
+        background: #569cd6;
+        color: white;
+        transform: translateY(-1px);
+    }
+    
+    .btn-edit-faculty {
+        background: rgba(215, 186, 125, 0.1);
+        color: #d7ba7d;
+        border: 1px solid rgba(215, 186, 125, 0.3);
+        padding: 8px 16px;
+        border-radius: 6px;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+    
+    .btn-edit-faculty:hover {
+        background: #d7ba7d;
+        color: #1e1e1e;
+        transform: translateY(-1px);
+    }
+    
+    .btn-delete-faculty {
+        background: rgba(244, 71, 71, 0.1);
+        color: #f44747;
+        border: 1px solid rgba(244, 71, 71, 0.3);
+        padding: 8px 16px;
+        border-radius: 6px;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+        font-family: inherit;
+        font-size: 0.9rem;
+    }
+    
+    .btn-delete-faculty:hover {
+        background: #f44747;
+        color: white;
+        transform: translateY(-1px);
+    }
+    
+    .empty-plans {
+        text-align: center;
+        padding: 80px 30px;
+        background: linear-gradient(135deg, #252526 0%, #2d2d30 100%);
+        border-radius: 16px;
+        border: 1px solid #3e3e42;
+    }
+    
+    .empty-icon {
+        font-size: 4rem;
+        color: #4ec9b0;
+        margin-bottom: 20px;
+        opacity: 0.7;
+    }
+    
+    .empty-title {
+        color: #ffffff;
+        font-size: 1.8rem;
+        margin-bottom: 15px;
+    }
+    
+    .empty-description {
+        color: #888;
+        font-size: 1.1rem;
+        margin-bottom: 30px;
+        line-height: 1.6;
+    }
+    
+    .btn-create-faculty {
+        background: linear-gradient(135deg, #4ec9b0 0%, #3aa794 100%);
+        color: #1e1e1e;
+        border: none;
+        padding: 12px 24px;
+        font-weight: 600;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        text-decoration: none;
+    }
+    
+    .btn-create-faculty:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(78, 201, 176, 0.4);
+        color: #1e1e1e;
+    }
+    
+    /* Модальное окно подтверждения удаления */
+    .delete-confirm-modal {
+        display: none;
+        position: fixed;
+        z-index: 1050;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0,0,0,0.5);
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .delete-confirm-content {
+        background: linear-gradient(135deg, #252526 0%, #2d2d30 100%);
+        padding: 30px;
+        border-radius: 12px;
+        border: 1px solid #3e3e42;
+        width: 90%;
+        max-width: 500px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    }
+    
+    .delete-confirm-header {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        margin-bottom: 20px;
+        padding-bottom: 15px;
+        border-bottom: 1px solid #3e3e42;
+    }
+    
+    .delete-confirm-icon {
+        font-size: 2rem;
+        color: #f44747;
+    }
+    
+    .delete-confirm-title {
+        color: #ffffff;
+        font-size: 1.5rem;
+        margin: 0;
+    }
+    
+    .delete-confirm-body {
+        color: #cccccc;
+        margin-bottom: 25px;
+        line-height: 1.6;
+    }
+    
+    .delete-confirm-footer {
+        display: flex;
+        justify-content: flex-end;
+        gap: 15px;
+    }
+    
+    .btn-confirm-cancel {
+        background: transparent;
+        color: #888;
+        border: 1px solid #444;
+        padding: 10px 20px;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-confirm-cancel:hover {
+        background: #3e3e42;
+        color: #cccccc;
+    }
+    
+    .btn-confirm-delete {
+        background: #f44747;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-confirm-delete:hover {
+        background: #d62c2c;
+        transform: translateY(-1px);
+    }
+    
+    /* Адаптивность */
+    @media (max-width: 768px) {
+        .plans-header {
+            flex-direction: column;
+            text-align: center;
+        }
+        
+        .faculty-stats {
+            grid-template-columns: 1fr;
+        }
+        
+        .plan-item {
+            flex-direction: column;
+            align-items: stretch;
+        }
+        
+        .plan-actions {
+            justify-content: center;
+        }
+        
+        .delete-confirm-content {
+            width: 95%;
+            padding: 20px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block account_content %}
+<div class="faculty-plans-container">
+    <!-- Заголовок -->
+    <div class="plans-header">
+        <div>
+            <h1 class="plans-title">Планы нарядов факультета</h1>
+            <p class="plans-subtitle">Управление графиками распределения факультетских нарядов</p>
+        </div>
+        <a href="{% url 'faculty:duty_plan' %}" class="btn-create-faculty">
+            <i class="fas fa-plus"></i> Создать новый план
+        </a>
+    </div>
+
+    {% if plans %}
+    <!-- Статистика -->
+    <div class="faculty-stats">
+        <div class="faculty-stat-card">
+            <div class="stat-header">
+                <div class="stat-label">Всего планов</div>
+                <div class="stat-icon">📈</div>
+            </div>
+            <div class="stat-value">{{ plans.count }}</div>
+        </div>
+        
+        <div class="faculty-stat-card">
+            <div class="stat-header">
+                <div class="stat-label">Активных планов</div>
+                <div class="stat-icon">⚡</div>
+            </div>
+            <div class="stat-value">{{ active_plans_count }}</div>
+        </div>
+        
+        <div class="faculty-stat-card">
+            <div class="stat-header">
+                <div class="stat-label">Всего нарядов</div>
+                <div class="stat-icon">🎯</div>
+            </div>
+            <div class="stat-value">{{ total_schedules }}</div>
+        </div>
+        
+        <div class="faculty-stat-card">
+            <div class="stat-header">
+                <div class="stat-label">Кафедр</div>
+                <div class="stat-icon">🏢</div>
+            </div>
+            <div class="stat-value">{{ departments.count }}</div>
+        </div>
+    </div>
+
+    <!-- Список планов -->
+    <div class="plans-timeline">
+        <div class="timeline-header">
+            <h2 class="timeline-title">📅 Хронология планов</h2>
+            <div>
+                <span class="text-muted">{{ plans.count }} планов</span>
+            </div>
+        </div>
+
+        <div class="plans-list">
+            {% for plan in plans %}
+            <div class="plan-item" data-plan-id="{{ plan.id }}">
+                <div class="plan-content">
+                    <div class="plan-month">
+                        {{ plan.month|date:"F Y" }}
+                        {% if plan.is_generated %}
+                        <span style="color: #4ec9b0; font-size: 0.9rem;">✓</span>
+                        {% else %}
+                        <span style="color: #d7ba7d; font-size: 0.9rem;">✎</span>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="plan-meta">
+                        <span class="plan-badge">
+                            <i class="fas fa-building"></i>
+                            {{ plan.get_selected_units_display|truncatechars:30 }}
+                        </span>
+                        <span class="plan-badge">
+                            <i class="fas fa-calendar-check"></i>
+                            {% if plan.schedule_count %}
+                                {{ plan.schedule_count }} назнач.
+                            {% else %}
+                                0 назнач.
+                            {% endif %}
+                        </span>
+                        <span class="plan-badge">
+                            <i class="fas fa-clock"></i>
+                            {{ plan.created_at|date:"d.m.Y" }}
+                        </span>
+                    </div>
+
+                    <div class="plan-units">
+                        <strong>Подразделения:</strong> {{ plan.get_selected_units_display }}
+                    </div>
+                </div>
+
+                <div class="plan-actions">
+                    <a href="{% url 'faculty:plan_detail' plan.pk %}" class="btn-view-faculty">
+                        <i class="fas fa-eye"></i> Просмотр
+                    </a>
+                    <a href="{% url 'faculty:duty_plan' %}?year={{ plan.month.year }}&month={{ plan.month.month }}" 
+                       class="btn-edit-faculty">
+                        <i class="fas fa-edit"></i> Редактировать
+                    </a>
+                    <button class="btn-delete-faculty" onclick="showDeleteConfirm({{ plan.id }}, '{{ plan.month|date:"F Y" }}')">
+                        <i class="fas fa-trash"></i> Удалить
+                    </button>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Пагинация -->
+    {% if is_paginated %}
+    <div style="text-align: center; margin-top: 30px;">
+        <div class="btn-group">
+            {% if page_obj.has_previous %}
+            <a href="?page={{ page_obj.previous_page_number }}" class="btn btn-secondary">
+                <i class="fas fa-chevron-left"></i> Назад
+            </a>
+            {% endif %}
+            
+            <span class="btn btn-outline-secondary" style="cursor: default;">
+                Страница {{ page_obj.number }} из {{ page_obj.paginator.num_pages }}
+            </span>
+            
+            {% if page_obj.has_next %}
+            <a href="?page={{ page_obj.next_page_number }}" class="btn btn-secondary">
+                Вперед <i class="fas fa-chevron-right"></i>
+            </a>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+
+    {% else %}
+    <!-- Пустой список -->
+    <div class="empty-plans">
+        <div class="empty-icon">📊</div>
+        <h2 class="empty-title">Планы нарядов не найдены</h2>
+        <p class="empty-description">
+            У факультета пока нет созданных планов нарядов.<br>
+            Начните с создания первого плана для автоматического распределения нарядов между подразделениями факультета.
+        </p>
+        <a href="{% url 'faculty:duty_plan' %}" class="btn-create-faculty">
+            <i class="fas fa-rocket"></i> Создать первый план
+        </a>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Модальное окно подтверждения удаления -->
+<div id="deleteConfirmModal" class="delete-confirm-modal">
+    <div class="delete-confirm-content">
+        <div class="delete-confirm-header">
+            <div class="delete-confirm-icon">🗑️</div>
+            <h3 class="delete-confirm-title">Подтверждение удаления</h3>
+        </div>
+        <div class="delete-confirm-body">
+            Вы уверены, что хотите удалить план на <span id="deletePlanMonth" style="font-weight: bold; color: #4ec9b0;"></span>?
+            <br><br>
+            Будет удалено: <span id="deleteScheduleCount" style="font-weight: bold; color: #f44747;"></span> записей расписаний.
+            <br><br>
+            <span style="color: #888;">Это действие нельзя отменить!</span>
+        </div>
+        <div class="delete-confirm-footer">
+            <button type="button" class="btn-confirm-cancel" onclick="hideDeleteConfirm()">Отмена</button>
+            <form id="deletePlanForm" method="post" style="display: inline;">
+                {% csrf_token %}
+                <button type="submit" class="btn-confirm-delete">
+                    <i class="fas fa-trash"></i> Удалить план
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+// Модальное окно удаления
+let currentPlanId = null;
+let scheduleCounts = {};
+
+// Загружаем количество расписаний для каждого плана
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.plan-item').forEach(item => {
+        const planId = item.dataset.planId;
+        const scheduleBadge = item.querySelector('.plan-badge:nth-child(2)');
+        let count = 0;
+        
+        if (scheduleBadge) {
+            const text = scheduleBadge.textContent;
+            const match = text.match(/(\d+)/);
+            if (match) {
+                count = parseInt(match[0]);
+            }
+        }
+        
+        scheduleCounts[planId] = count;
+    });
+});
+
+function showDeleteConfirm(planId, month) {
+    currentPlanId = planId;
+    const scheduleCount = scheduleCounts[planId] || 0;
+    
+    document.getElementById('deletePlanMonth').textContent = month;
+    document.getElementById('deleteScheduleCount').textContent = scheduleCount;
+    
+    // Устанавливаем action формы
+    const form = document.getElementById('deletePlanForm');
+    form.action = `/faculty/duty/plan/${planId}/delete/`;
+    
+    // Показываем модальное окно
+    document.getElementById('deleteConfirmModal').style.display = 'flex';
+}
+
+function hideDeleteConfirm() {
+    document.getElementById('deleteConfirmModal').style.display = 'none';
+    currentPlanId = null;
+}
+
+// Закрытие модального окна по клику вне его
+document.getElementById('deleteConfirmModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        hideDeleteConfirm();
+    }
+});
+
+// Анимация появления элементов
+document.addEventListener('DOMContentLoaded', function() {
+    const items = document.querySelectorAll('.plan-item, .faculty-stat-card');
+    items.forEach((item, index) => {
+        item.style.animationDelay = `${index * 0.1}s`;
+        item.style.opacity = '0';
+        item.style.transform = 'translateY(20px)';
+        item.style.animation = 'fadeInUp 0.5s ease forwards';
+    });
+});
+
+// CSS анимация
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+`;
+document.head.appendChild(style);
+</script>
+
+<!-- Обработка сообщений Django -->
+{% if messages %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    {% for message in messages %}
+    {% if message.tags == 'success' %}
+    showNotification('{{ message|safe }}', 'success', 5000);
+    {% elif message.tags == 'error' %}
+    showNotification('{{ message|safe }}', 'error', 5000);
+    {% elif message.tags == 'warning' %}
+    showNotification('{{ message|safe }}', 'warning', 5000);
+    {% else %}
+    showNotification('{{ message|safe }}', 'info', 5000);
+    {% endif %}
+    {% endfor %}
+});
+
+function showNotification(message, type = 'info', duration = 3000) {
+    // Удаляем старые уведомления
+    const oldContainer = document.getElementById('notifications-container');
+    if (oldContainer) oldContainer.remove();
+    
+    // Создаем новый контейнер
+    const container = document.createElement('div');
+    container.id = 'notifications-container';
+    container.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 10000;
+        max-width: 400px;
+    `;
+    
+    const notification = document.createElement('div');
+    notification.className = `notification notification-${type}`;
+    notification.style.cssText = `
+        background: ${type === 'success' ? '#4ec9b0' : 
+                    type === 'error' ? '#f44747' : 
+                    type === 'warning' ? '#d7ba7d' : '#569cd6'};
+        color: white;
+        padding: 15px 20px;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        animation: slideInRight 0.3s ease-out;
+    `;
+    
+    const icons = {
+        success: 'check-circle',
+        error: 'exclamation-circle',
+        warning: 'exclamation-triangle',
+        info: 'info-circle'
+    };
+    
+    notification.innerHTML = `
+        <i class="fas fa-${icons[type] || 'info-circle'}"></i>
+        <span>${message}</span>
+        <button class="notification-close" style="margin-left: auto; background: none; border: none; color: inherit; cursor: pointer; font-size: 18px;">
+            &times;
+        </button>
+    `;
+    
+    container.appendChild(notification);
+    document.body.appendChild(container);
+    
+    // Автоматическое закрытие
+    if (duration > 0) {
+        setTimeout(() => {
+            if (notification.parentNode) {
+                notification.style.animation = 'slideOutRight 0.3s ease-in';
+                setTimeout(() => {
+                    if (container.parentNode) container.remove();
+                }, 300);
+            }
+        }, duration);
+    }
+    
+    // Закрытие по клику
+    notification.querySelector('.notification-close').addEventListener('click', () => {
+        notification.style.animation = 'slideOutRight 0.3s ease-in';
+        setTimeout(() => container.remove(), 300);
+    });
+}
+</script>
+{% endif %}
+{% endblock %}
